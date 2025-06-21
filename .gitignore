@@ -3,3 +3,4 @@
 .env
 *.env
 insanely-fast-whisper
+*venv
