@@ -1,6 +1,6 @@
 body {
     background-color: transparent;
-    color: #ffffff;
+    color: #8be6ff;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
     margin: 0;
     height: 100vh;
@@ -18,14 +18,13 @@ body {
     position: absolute;
     width: 300px;
     height: 200px;
-    background-color: rgba(10, 10, 10, 0.4);
-    border: 1px solid rgba(80, 80, 80, 0.6);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    background-color: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(80px);
+    -webkit-backdrop-filter: blur(80px);
     border-radius: 12px;
     padding: 20px;
     box-sizing: border-box;
-    text-shadow: 0 0 10px black;
     -webkit-app-region: no-drag;
 }
 
