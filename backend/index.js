@@ -7,7 +7,6 @@ function createWindow () {
     height: 768,
     frame: false,
     transparent: true,
-    opacity: 0.7,
     alwaysOnTop: true,
     skipTaskbar: true,
     focusable: false,
