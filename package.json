@@ -20,5 +20,8 @@
   "homepage": "https://github.com/Gurvirr/spurhacks-2025#readme",
   "devDependencies": {
     "electron": "^36.5.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0"
   }
 }
