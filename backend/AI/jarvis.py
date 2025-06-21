@@ -9,42 +9,46 @@ import webbrowser
 # from playsound
 
 
-def jarvius_query(prompt):
+def jarvis_query(prompt):
     try:
-        response = client.models.generate_content(
+        query = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
             ),
         )
-        return response.text
+        return query.text
     except Exception as e:
         return f"Error: {e}"
 
 import actions
 
-# def handle_jarvius_command(prompt):
+# def handle_jarvis_command(prompt):
 #     if "clip" in prompt:
 #         return "[Mock] Clipping last 30 seconds..."
 #     elif "make fun" in prompt:
 #         return "[Mock] Roasting user's stats..."
 #     elif "dox" in prompt:
-#         return "Nope. That's not allowed. Jarvius draws the line at doxing."
+#         return "Nope. That's not allowed. jarvis draws the line at doxing."
 #     else:
-#         return jarvius_query(prompt)
+#         return jarvis_query(prompt)
 
 
 def extract_intent(user_prompt):
     prompt = (
         f"User said: '{user_prompt}'. "
         f"Choose one action from: {actions.action_list()}. "
-        f"Based on the action choosen, return a dictionary based the following format: {actions.action_format()}."
+        f"Based on the action choosen, return a dictionary (python formated) based the following format: {actions.action_format()}."
         f""
     )
-    response = jarvius_query(prompt)
-    print(f"Jarvius response: {response}")
-    intent = response
+    response = jarvis_query(prompt)
+    print(f"jarvis response: {response}")
+    print(dict(response))
+    response = dict(response) 
+    for key in response: 
+        print(f"Key: {key}, Value: {response[key]}")
+    intent = response[0]
     return intent if intent in actions.action_list() else "unknown"
 
 
