@@ -2,7 +2,7 @@
   "name": "spurhacks-2025",
   "version": "1.0.0",
   "description": "",
-  "main": "src/main/index.js",
+  "main": "backend/index.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
