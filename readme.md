@@ -13,5 +13,7 @@ python -m venv venv
 
 pip install -q -U google-genai
 pip install obsws-python
-
+pip install dotenv
+pip install pyautogui
+pip install pyscreeze
 ```
