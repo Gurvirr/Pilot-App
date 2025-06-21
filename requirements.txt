@@ -1,0 +1,14 @@
+# Core AI and API packages
+google-genai
+python-dotenv
+
+# OBS WebSocket integration
+obsws-python
+
+# GUI automation and screen capture
+pyautogui
+pyscreeze
+
+# Windows-specific packages
+pywin32
+winapps
