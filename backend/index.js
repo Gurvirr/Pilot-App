@@ -1,10 +1,12 @@
-const { app, BrowserWindow, globalShortcut } = require('electron');
+const { app, BrowserWindow, screen, globalShortcut } = require('electron');
 const path = require('path');
 
 function createWindow () {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+
   const win = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width,
+    height,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
