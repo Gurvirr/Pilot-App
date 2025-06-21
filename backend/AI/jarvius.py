@@ -22,36 +22,34 @@ def jarvius_query(prompt):
     except Exception as e:
         return f"Error: {e}"
 
-import re
 import actions
 
-def handle_jarvius_command(prompt):
-    if "clip" in prompt:
-        return "[Mock] Clipping last 30 seconds..."
-    elif "make fun" in prompt:
-        return "[Mock] Roasting user's stats..."
-    elif "dox" in prompt:
-        return "Nope. That's not allowed. Jarvius draws the line at doxing."
-    else:
-        return jarvius_query(prompt)
+# def handle_jarvius_command(prompt):
+#     if "clip" in prompt:
+#         return "[Mock] Clipping last 30 seconds..."
+#     elif "make fun" in prompt:
+#         return "[Mock] Roasting user's stats..."
+#     elif "dox" in prompt:
+#         return "Nope. That's not allowed. Jarvius draws the line at doxing."
+#     else:
+#         return jarvius_query(prompt)
 
-
-INTENT_OPTIONS = ["play_music", "clip", "screenshot", "open_app", "send_discord", "afk", "quit_game", "unknown"]
 
 def extract_intent(user_prompt):
     prompt = (
         f"User said: '{user_prompt}'. "
-        f"Choose one action from: {INTENT_OPTIONS}. "
-        "Only respond with the action name."
+        f"Choose one action from: {actions.action_list()}. "
+        f"Based on the action choosen, return a dictionary based the following format: {actions.action_format()}."
+        f""
     )
     response = jarvius_query(prompt)
     print(f"Jarvius response: {response}")
-    intent = response.strip().lower()
-    return intent if intent in INTENT_OPTIONS else "unknown"
+    intent = response
+    return intent if intent in actions.action_list() else "unknown"
 
 
 
-def execute_action(intent):
+def execute_action(intent, context=None):
     if intent == "clip":
         print("[Mock] Clipping last 30s (to be integrated with OBS or NVIDIA API)")
     elif intent == "screenshot":
@@ -59,7 +57,8 @@ def execute_action(intent):
     # elif intent == "play_music":
     #     playsound("sick_track.mp3")  # Add your music path
     elif intent == "open_app":
-        os.system("start notepad")  # Windows
+        print(f"[Mock] Opening application: {context['app_name']}")
+        # actions.open_app(context["app_name"])  # Windows
     # elif intent == "quit_game":
         # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
     elif intent == "afk":
