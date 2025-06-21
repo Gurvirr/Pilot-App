@@ -6,9 +6,6 @@ import win32gui
 import subprocess
 import re
 import winapps
-from google import genai
-from pydantic import BaseModel
-from typing import Literal, Optional
 
 def action_list():
     """List available actions."""
@@ -22,18 +19,8 @@ def action_list():
         "quit_game"
     ]
 
-class Action(BaseModel):
-    intent: Literal["screenshot", "clip", "play_music", "open_app", "send_discord", "afk", "quit_game"]
-    time: Optional[int] = None  # For "clip", in seconds
-    song_title: Optional[str] = None  # For "play_music"
-    song_artist: Optional[str] = None  # For "play_music"
-    app_name: Optional[str] = None  # For "open_app"
-    message: Optional[str] = None  # For "send_discord"
 
-    class Config:
-        schema_extra = {
-            "propertyOrdering": ["intent", "time", "song_title", "song_artist", "app_name", "message"]
-        }
+
 
 def screenshot():
     """Take a screenshot and save it to the folder."""

@@ -5,24 +5,77 @@ from google.genai import types
 import re
 import pyautogui
 import webbrowser
+import enum
+import actions
+from typing import Optional
+from pydantic import BaseModel, Field
+import json
+import ast
 
-# from playsound
 
+class ActionModel(BaseModel):
+    intent: str = Field(..., description="The specific action to perform")
+    description: str = Field(..., description="Detail about the action")
+    song_name: Optional[str] = Field(None, description="Name of the song (for play_music intent)")
+    song_artist: Optional[str] = Field(None, description="Artist of the song (for play_music intent)")
+    app_name: Optional[str] = Field(None, description="Application to open (for open_app intent)")
+    text_message: Optional[str] = Field(None, description="Message text (for send_discord intent)")
+
+    class Config:
+        #: Enforce JSON schema output with ordered properties
+        model_config = {
+            "json_schema_extra": {
+                "propertyOrdering": [
+                    "intent",
+                    "description",
+                    "song_name",
+                    "song_artist",
+                    "app_name",
+                    "text_message"
+                ]
+            }
+        }
+
+class RootModel(BaseModel):
+    action: ActionModel
+
+    class Config:
+        model_config = {
+            "json_schema_extra": {
+                "title": "Root",
+                "type": "object"
+            }
+        }
+
+class Recipe(BaseModel):
+    recipe_name: str
+    ingredients: list[str]
 
 def jarvis_query(prompt):
     try:
-        query = client.models.generate_content(
+        # Generate structured output
+        response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=0) # Disables thinking
+                response_mime_type="application/json",
+                response_schema=list[ActionModel]  # Use the Pydantic schema here
             ),
         )
-        return query.text
+
+        # Access structured data
+        # action_data: ActionModel = response.parsed
+        # print(response.text)
+        # print(action_data[0])
+        # return action_data.dict()
+
+        data = json.loads(response.text.strip())[0]
+        print(data, type(data))
+        return ast.literal_eval(data) if isinstance(data, str) else data
+
     except Exception as e:
         return f"Error: {e}"
 
-import actions
 
 # def handle_jarvis_command(prompt):
 #     if "clip" in prompt:
@@ -35,25 +88,15 @@ import actions
 #         return jarvis_query(prompt)
 
 
-def extract_intent(user_prompt):
+def extract_response(user_prompt):
     prompt = (
         f"User said: '{user_prompt}'. "
-        f"Choose one action from: {actions.action_list()}. "
-        f"Based on the action choosen, return a dictionary (python formated) based the following format: {actions.action_format()}."
-        f""
+        "User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags."
     )
-    response = jarvis_query(prompt)
-    print(f"jarvis response: {response}")
-    print(dict(response))
-    response = dict(response) 
-    for key in response: 
-        print(f"Key: {key}, Value: {response[key]}")
-    intent = response[0]
-    return intent if intent in actions.action_list() else "unknown"
+    response_dict = jarvis_query(prompt) 
+    return response_dict
 
-
-
-def execute_action(intent, context=None):
+def execute_action(intent, context):
     if intent == "clip":
         print("[Mock] Clipping last 30s (to be integrated with OBS or NVIDIA API)")
     elif intent == "screenshot":
@@ -81,6 +124,6 @@ if __name__ == "__main__":
 
     while True:
         user_input = input("You: ")
-        intent = extract_intent(user_input)
-        print(f"Intent: {intent}")
-        execute_action(intent)
+        response = extract_response(user_input)
+        print(f"Response: {response}")
+        execute_action(response.get("intent"), response)
