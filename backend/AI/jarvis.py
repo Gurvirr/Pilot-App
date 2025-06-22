@@ -127,3 +127,9 @@ if __name__ == "__main__":
         response = extract_response(user_input)
         print(f"Response: {response}")
         execute_action(response.get("intent"), response)
+
+
+def jarvis_do(prompt): 
+    print(f"Jarvis: {prompt}")
+    response = extract_response(prompt)
+    execute_action(response.get("intent"), response)
