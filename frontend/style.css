@@ -99,14 +99,14 @@ body.full-view .center-visualizer {
 /* Iron Man Hologram Styles */
 .hologram-container {
     position: absolute;
-    left: 50px;
+    left: 20px; /* Align with corner boxes */
     top: 50%;
     transform: translateY(-50%);
-    width: 300px; /* Made smaller */
-    height: 300px; /* Made smaller */
+    width: 450px; /* Increased width */
+    height: 550px; /* Significantly increased height */
     pointer-events: none;
     z-index: 10;
-    transition: all 0.3s ease-in-out; /* Faster transition */
+    transition: all 0.3s ease-in-out;
 }
 
 #hologram-canvas {

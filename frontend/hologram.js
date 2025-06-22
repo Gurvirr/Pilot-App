@@ -67,12 +67,12 @@ class IronManHologram {
         const rightPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 2.5);
         this.clippingPlanes.push(rightPlane);
         
-        // Top clipping plane (negative Y direction)
-        const topPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.5);
+        // Top clipping plane (negative Y direction) - Increased to give more space
+        const topPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 4.5);
         this.clippingPlanes.push(topPlane);
         
-        // Bottom clipping plane (positive Y direction)
-        const bottomPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2.5);
+        // Bottom clipping plane (positive Y direction) - Increased to give more space
+        const bottomPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 4.5);
         this.clippingPlanes.push(bottomPlane);
         
         // Front clipping plane (negative Z direction)
@@ -100,8 +100,8 @@ class IronManHologram {
                 // IMPORTANT: Set position AFTER adding to scene
                 this.scene.add(this.hologram);
                 
-                // Position model more to the right (less negative X)
-                this.hologram.position.set(-1.1, -2.1, 0); // More to the right (-1.8 instead of -2.5)
+                // Position model down to re-center it in the larger container
+                this.hologram.position.set(-1.1, -3.1, 0); 
                 
                 // Add minimal lighting (no aura)
                 this.setupLighting();
@@ -158,10 +158,10 @@ class IronManHologram {
         if (this.hologram) {
             this.hologram.rotation.y += 0.01; // Only Y-axis rotation
             
-            // Keep position completely fixed
-            this.hologram.position.x = -1.1; // More to the right
-            this.hologram.position.y = -2.1; // More down
-            this.hologram.position.z = 0;    // Fixed Z position
+            // Keep position completely fixed - move it down
+            this.hologram.position.x = -1.1; 
+            this.hologram.position.y = -3.1; // Move down
+            this.hologram.position.z = 0;
         }
 
         // Render the scene
