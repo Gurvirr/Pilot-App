@@ -29,14 +29,13 @@ def speech_to_text_loop():
             if rec.AcceptWaveform(data):
                 result = rec.Result()
                 text = json.loads(result).get("text", "")
+                print(f"Recognized: {text}") # this needs to have the socket connection
                 
                 if trigger_word in text.lower():
                     # Find position of trigger word and output from there
                     start_index = text.lower().index(trigger_word)
                     command = text[start_index:]
                     
-                    
-
                     # We only want to return if there's a command after "jarvis"
                     if len(command.strip()) > len(trigger_word):
                         return command

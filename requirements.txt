@@ -5,6 +5,7 @@ elevenlabs
 pygame
 requests
 flask
+flask-socketio
 
 # OBS WebSocket integration
 obsws-python
@@ -20,3 +21,4 @@ winapps
 
 vosk
 sounddevice
+numpy

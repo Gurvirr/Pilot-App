@@ -7,8 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
-<body>
-    <div class="overlay-container">
+<body>    <div class="overlay-container">
         <div class="corner-box top-left">
             <!-- System info will be inserted here -->
         </div>
@@ -22,7 +21,7 @@
             <canvas id="canvas-br"></canvas>
         </div>
         
-        <!-- Restore Center Audio Visualizer -->
+        <!-- Move Center Audio Visualizer to top-right area -->
         <div class="center-visualizer">
             <canvas id="canvas-center"></canvas>
         </div>
@@ -31,10 +30,12 @@
         <div class="hologram-container">
             <div id="hologram-canvas"></div>
         </div>
-    </div>
-    
-    <script src="animations.js"></script>
+    </div>    <script src="animations.js"></script>
     <script src="hologram.js"></script>
     <script src="system-info.js"></script>
+    <script src="mini-overlay.js"></script>
+    <script src="view-manager.js"></script>
+    <script src="message-logger.js"></script>
+    <script src="websocket-client.js"></script>
 </body>
-</html> 
+</html>

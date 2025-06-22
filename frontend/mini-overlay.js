@@ -1,0 +1,433 @@
+// Mini Overlay Component for Top Right
+class MiniOverlay {
+    constructor() {
+        this.messages = [];
+        this.maxMessages = 10; // Keep only the last 10 messages for mini view
+        this.container = null;
+        this.ring = null;
+        this.messageLog = null;
+        this.isVisible = true; // Start with mini overlay visible
+        this.state = 'idle'; // idle, active, processing
+        
+        this.init();
+    }
+    
+    init() {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.create());
+        } else {
+            this.create();
+        }
+    }
+    
+    create() {
+        // Create mini overlay container
+        this.container = document.createElement('div');
+        this.container.className = 'mini-overlay';
+        this.container.id = 'mini-overlay';
+        
+        // Create the small ring (similar to center visualizer but smaller)
+        this.ring = document.createElement('div');
+        this.ring.className = 'mini-ring';
+        this.ring.innerHTML = '<canvas id="mini-ring-canvas"></canvas>';
+        
+        // Create mini message log
+        this.messageLog = document.createElement('div');
+        this.messageLog.className = 'mini-message-log';
+        this.messageLog.innerHTML = `
+            <div class="mini-log-header">Messages</div>
+            <div class="mini-log-content" id="mini-log-content">
+                <div class="mini-message">System ready</div>
+            </div>
+        `;
+        
+        // Assemble the overlay
+        this.container.appendChild(this.ring);
+        this.container.appendChild(this.messageLog);
+        
+        // Add to document
+        document.body.appendChild(this.container);
+        
+        // Initialize mini ring animation
+        this.initMiniRing();
+        
+        // Add styles
+        this.addStyles();
+        
+        console.log('Mini overlay created');
+    }
+    
+    initMiniRing() {
+        const canvas = document.getElementById('mini-ring-canvas');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        let frame = 0;
+        
+        // Set canvas size
+        const resizeCanvas = () => {
+            const size = 60; // Small ring size
+            canvas.width = size;
+            canvas.height = size;
+        };
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Animation loop
+        const animate = () => {
+            frame += 0.05;
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 20;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ring based on state
+            ctx.strokeStyle = this.getRingColor();
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.8;
+            
+            // Draw animated ring
+            const segments = 12;
+            for (let i = 0; i < segments; i++) {
+                const angle = (i / segments) * Math.PI * 2 + frame;
+                const startAngle = angle;
+                const endAngle = angle + (Math.PI * 2) / (segments * 2);
+                
+                const alpha = (Math.sin(frame + i * 0.5) + 1) / 2;
+                ctx.globalAlpha = alpha * 0.8;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.stroke();
+            }
+            
+            requestAnimationFrame(animate);
+        };
+        
+        animate();
+    }
+    
+    getRingColor() {
+        switch (this.state) {
+            case 'active':
+                return '#00ff88'; // Green when active
+            case 'processing':
+                return '#ff6b00'; // Orange when processing
+            case 'idle':
+            default:
+                return '#00aaff'; // Blue when idle
+        }
+    }
+    
+    addStyles() {
+        const styles = `
+            <style>
+                .mini-overlay {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 1000;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
+                    pointer-events: none;
+                    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+                    transition: opacity 0.3s ease-in-out;
+                }
+                
+                .mini-overlay.hidden {
+                    opacity: 0;
+                    pointer-events: none;
+                }
+                
+                .mini-ring {
+                    width: 60px;
+                    height: 60px;
+                    margin-bottom: 8px;
+                    border-radius: 50%;
+                    background: rgba(10, 10, 10, 0.8);
+                    border: 1px solid rgba(0, 170, 255, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease-in-out;
+                }
+                
+                .mini-ring.active {
+                    border-color: rgba(0, 255, 136, 0.8);
+                    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+                    transform: scale(1.1);
+                }
+                
+                .mini-ring.processing {
+                    border-color: rgba(255, 107, 0, 0.8);
+                    box-shadow: 0 0 15px rgba(255, 107, 0, 0.3);
+                }
+                
+                #mini-ring-canvas {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                }
+                
+                .mini-message-log {
+                    background: rgba(10, 10, 10, 0.9);
+                    border: 1px solid rgba(0, 170, 255, 0.3);
+                    border-radius: 4px;
+                    width: 280px;
+                    max-height: 200px;
+                    font-size: 10px;
+                    color: #00aaff;
+                    overflow: hidden;
+                    backdrop-filter: blur(10px);
+                    transition: all 0.3s ease-in-out;
+                }
+                
+                .mini-log-header {
+                    padding: 6px 10px;
+                    background: rgba(0, 170, 255, 0.1);
+                    border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+                    font-weight: bold;
+                    font-size: 11px;
+                    text-align: center;
+                }
+                
+                .mini-log-content {
+                    padding: 6px;
+                    max-height: 160px;
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                }
+                
+                .mini-log-content::-webkit-scrollbar {
+                    width: 3px;
+                }
+                
+                .mini-log-content::-webkit-scrollbar-track {
+                    background: rgba(0, 170, 255, 0.1);
+                }
+                
+                .mini-log-content::-webkit-scrollbar-thumb {
+                    background: rgba(0, 170, 255, 0.3);
+                    border-radius: 2px;
+                }
+                
+                .mini-message {
+                    margin-bottom: 4px;
+                    padding: 3px 6px;
+                    border-radius: 2px;
+                    background: rgba(255, 255, 255, 0.02);
+                    font-size: 9px;
+                    line-height: 1.2;
+                    word-wrap: break-word;
+                    border-left: 2px solid rgba(0, 170, 255, 0.3);
+                    animation: miniMessageAppear 0.2s ease-in;
+                }
+                
+                @keyframes miniMessageAppear {
+                    from { opacity: 0; transform: translateX(10px); }
+                    to { opacity: 1; transform: translateX(0); }
+                }
+                
+                .mini-message.user {
+                    border-left-color: #00ff88;
+                    color: #ffffff;
+                }
+                
+                .mini-message.jarvis {
+                    border-left-color: #ff6b00;
+                    color: #ffcc99;
+                }
+                
+                .mini-message.system {
+                    border-left-color: #00aaff;
+                    color: #99ccff;
+                }
+                
+                .mini-message.error {
+                    border-left-color: #ff4444;
+                    color: #ffaaaa;
+                    background: rgba(255, 68, 68, 0.1);
+                }
+                
+                .mini-message.active {
+                    border-left-color: #ffff00;
+                    color: #ffffaa;
+                    background: rgba(255, 255, 0, 0.1);
+                }
+                
+                .mini-message-time {
+                    color: rgba(255, 255, 255, 0.4);
+                    font-size: 8px;
+                    margin-right: 6px;
+                }
+                
+                .mini-message-text {
+                    color: inherit;
+                }
+            </style>
+        `;
+        
+        document.head.insertAdjacentHTML('beforeend', styles);
+    }
+    
+    show() {
+        if (this.container) {
+            this.container.classList.remove('hidden');
+            this.isVisible = true;
+        }
+    }
+    
+    hide() {
+        if (this.container) {
+            this.container.classList.add('hidden');
+            this.isVisible = false;
+        }
+    }
+    
+    toggle() {
+        if (this.isVisible) {
+            this.hide();
+        } else {
+            this.show();
+        }
+    }
+    
+    setState(newState) {
+        if (this.state !== newState) {
+            this.state = newState;
+            this.updateRingVisual();
+        }
+    }
+    
+    updateRingVisual() {
+        if (!this.ring) return;
+        
+        // Remove all state classes
+        this.ring.classList.remove('active', 'processing', 'idle');
+        
+        // Add current state class
+        this.ring.classList.add(this.state);
+    }
+    
+    addMessage(data) {
+        const messageText = this.formatMessage(data);
+        const messageClass = this.getMessageClass(data.type, data.source);
+        
+        // Add to messages array
+        this.messages.push({
+            text: messageText,
+            class: messageClass,
+            timestamp: Date.now()
+        });
+        
+        // Keep only recent messages
+        if (this.messages.length > this.maxMessages) {
+            this.messages = this.messages.slice(-this.maxMessages);
+        }
+        
+        // Render message
+        this.renderMessage(messageText, messageClass);
+        
+        // Update state based on message type
+        if (data.type === 'active') {
+            this.setState('active');
+        } else if (data.type === 'hidden') {
+            this.setState('idle');
+        } else if (data.type === 'message' || data.type === 'jarvis_response') {
+            this.setState('processing');
+        }
+        
+        // Auto-scroll to bottom
+        this.scrollToBottom();
+    }
+    
+    formatMessage(data) {
+        const time = new Date().toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+        
+        let prefix = '';
+        switch (data.type) {
+            case 'message':
+                prefix = 'USER: ';
+                break;
+            case 'jarvis_response':
+                prefix = 'JARVIS: ';
+                break;
+            case 'active':
+                prefix = 'ACTIVE: ';
+                break;
+            case 'hidden':
+                prefix = 'DONE: ';
+                break;
+            case 'error':
+                prefix = 'ERROR: ';
+                break;
+            default:
+                prefix = 'SYS: ';
+        }
+        
+        const text = data.text || data.message || 'No message';
+        return `${time} ${prefix}${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`;
+    }
+    
+    getMessageClass(type, source) {
+        if (type === 'error') return 'error';
+        if (type === 'active') return 'active';
+        if (type === 'message') return 'user';
+        if (type === 'jarvis_response') return 'jarvis';
+        return 'system';
+    }
+    
+    renderMessage(messageText, messageClass) {
+        const content = document.getElementById('mini-log-content');
+        if (!content) return;
+        
+        const messageElement = document.createElement('div');
+        messageElement.className = `mini-message ${messageClass}`;
+        messageElement.textContent = messageText;
+        
+        content.appendChild(messageElement);
+    }
+    
+    scrollToBottom() {
+        const content = document.getElementById('mini-log-content');
+        if (content) {
+            content.scrollTop = content.scrollHeight;
+        }
+    }
+    
+    clear() {
+        this.messages = [];
+        const content = document.getElementById('mini-log-content');
+        if (content) {
+            content.innerHTML = '<div class="mini-message system">Log cleared</div>';
+        }
+    }
+}
+
+// Global mini overlay instance
+let miniOverlay = null;
+
+// Initialize when DOM is ready
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        miniOverlay = new MiniOverlay();
+        window.miniOverlay = miniOverlay; // Make it globally accessible
+        console.log('Mini overlay initialized');
+    }, 300);
+});
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = MiniOverlay;
+}

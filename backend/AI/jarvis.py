@@ -153,14 +153,51 @@ if __name__ == "__main__":
 
 def jarvis_do(prompt): 
     print(f"Jarvis: {prompt}")
+    
+    # Import socketio here to avoid circular imports
+    try:
+        from server import socketio
+        import time
+    except ImportError:
+        socketio = None
+        import time
+    
     response = extract_response(prompt)
+    
+    # Send jarvis response to WebSocket
+    if socketio and response and response.get("description"):
+        socketio.emit('jarvis_event', {
+            'type': 'jarvis_response',
+            'text': response["description"],
+            'timestamp': time.time(),
+            'source': 'jarvis',
+            'intent': response.get("intent", "unknown")
+        })
     
     # Speak the description of what Jarvis is about to do
     if response and response.get("description"):
         speak(response["description"])
     
+    # Send action start event
+    if socketio and response:
+        socketio.emit('jarvis_event', {
+            'type': 'action_start',
+            'text': f"Executing: {response.get('intent', 'unknown')}",
+            'timestamp': time.time(),
+            'intent': response.get("intent", "unknown")
+        })
+    
     # Execute the action and get the result feedback
     feedback = execute_action(response.get("intent"), response)
+
+    # Send action result to WebSocket
+    if socketio and feedback:
+        socketio.emit('jarvis_event', {
+            'type': 'action_result',
+            'text': feedback,
+            'timestamp': time.time(),
+            'source': 'system'
+        })
 
     # Speak the feedback from the action's execution
     if feedback:
