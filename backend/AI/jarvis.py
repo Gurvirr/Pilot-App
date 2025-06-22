@@ -19,7 +19,7 @@ class ActionModel(BaseModel):
     description: str = Field(..., description="The response to the user that you are going to say back to them, you can have a little fun with this one")
     song_name: Optional[str] = Field(None, description="Name of the song (for play_music intent)")
     song_artist: Optional[str] = Field(None, description="Artist of the song (for play_music intent)")
-    app_name: Optional[str] = Field(None, description="Application to open (for open_app intent)")
+    app_name: Optional[str] = Field(None, description="Application to open or close (for open_app or close_app intents)")
     text_message: Optional[str] = Field(None, description="Message text (for send_discord intent)")
 
     class Config:
@@ -117,19 +117,24 @@ def extract_response(user_prompt):
 def execute_action(intent, context):
     if intent == "clip":
         print("[Mock] Clipping last 30s (to be integrated with OBS or NVIDIA API)")
+        return "Clipping the last 30 seconds for you."
     elif intent == "screenshot":
         actions.screenshot()
+        return "Screenshot saved."
     # elif intent == "play_music":
     #     playsound("sick_track.mp3")  # Add your music path
     elif intent == "open_app":
-        # print(f"[Mock] Opening application: {context['app_name']}")
-        actions.open_app(context["app_name"])  # Windows
+        return actions.open_app(context["app_name"])
+    elif intent == "close_app":
+        return actions.close_app(context["app_name"])
     # elif intent == "quit_game":
         # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
     elif intent == "afk":
         print("[Mock] Simulating AFK behavior in Valorant...")
+        return "Going AFK."
     else:
         print("Unknown or unsupported command.")
+        return "Sorry, I don't know how to do that."
 
 
 # Example usage
@@ -143,7 +148,8 @@ if __name__ == "__main__":
         user_input = input("You: ")
         response = extract_response(user_input)
         print(f"Response: {response}")
-        execute_action(response.get("intent"), response)
+        feedback = execute_action(response.get("intent"), response)
+        print(f"Feedback: {feedback}")
 
 
 
@@ -155,4 +161,9 @@ def jarvis_do(prompt):
     if response and response.get("description"):
         speak(response["description"])
     
-    execute_action(response.get("intent"), response)
+    # Execute the action and get the result feedback
+    feedback = execute_action(response.get("intent"), response)
+
+    # Speak the feedback from the action's execution
+    if feedback:
+        speak(feedback)
