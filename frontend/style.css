@@ -52,13 +52,12 @@ body.full-view .center-visualizer {
 
 .corner-box {
     position: absolute;
-    width: 400px;
-    height: 250px;
+    width: 400px; /* Reverted back to original */
+    height: 250px; /* Reverted back to original */
     background-color: rgba(10, 10, 10, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(80px);
     -webkit-backdrop-filter: blur(80px);
-    border-radius: 4px; /* Reduced from 12px */
     border-radius: 4px; /* Reduced from 12px */
     padding: 0; /* Remove padding to let canvas fill the box */
     box-sizing: border-box;
@@ -66,7 +65,18 @@ body.full-view .center-visualizer {
     pointer-events: none; /* Allow clicks to pass through */
 }
 
-/* Add header styling for top-left box to match Jarvis messages */
+/* Make only the bottom-left corner box larger for media carousel */
+.corner-box.bottom-left {
+    width: 500px; /* Larger width for media carousel */
+    height: 350px; /* Larger height for media carousel */
+    pointer-events: auto; /* Enable clicks for media carousel */
+    background-color: rgba(10, 10, 10, 0.85); /* More opaque background */
+    backdrop-filter: blur(100px); /* Stronger blur */
+    -webkit-backdrop-filter: blur(100px);
+    border: 2px solid rgba(0, 170, 255, 0.4); /* More visible border */
+}
+
+/* Add header styling for top-left box */
 .corner-box.top-left::before {
     content: '';
     position: absolute;
@@ -75,7 +85,7 @@ body.full-view .center-visualizer {
     right: 0;
     height: 30px;
     background-color: rgba(0, 170, 255, 0.1);
-    border-bottom: 1px solid rgba(0, 170, 255, 0.3);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.2);
     border-radius: 4px 4px 0 0;
     z-index: 1;
 }
@@ -92,8 +102,8 @@ body.full-view .center-visualizer {
     z-index: 2;
 }
 
-/* Add header styling for top-left box to match Jarvis messages */
-.corner-box.top-left::before {
+/* Add header styling for top-right box */
+.corner-box.top-right::before {
     content: '';
     position: absolute;
     top: 0;
@@ -101,39 +111,13 @@ body.full-view .center-visualizer {
     right: 0;
     height: 30px;
     background-color: rgba(0, 170, 255, 0.1);
-    border-bottom: 1px solid rgba(0, 170, 255, 0.3);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.2);
     border-radius: 4px 4px 0 0;
     z-index: 1;
 }
 
-.corner-box.top-left::after {
-    content: '📊 System Monitor';
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    color: #00aaff;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: 11px;
-    font-weight: bold;
-    z-index: 2;
-}
-
-/* Add header styling for top-left box to match mini overlay */
-.corner-box.top-left::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background-color: rgba(0, 170, 255, 0.1);
-    border-bottom: 1px solid rgba(0, 170, 255, 0.2); /* Softer border to match mini overlay */
-    border-radius: 4px 4px 0 0;
-    z-index: 1;
-}
-
-.corner-box.top-left::after {
-    content: '📊 System Monitor';
+.corner-box.top-right::after {
+    content: '🎵 Audio Visualizer';
     position: absolute;
     top: 8px;
     left: 12px;
@@ -169,9 +153,9 @@ body.full-view .center-visualizer {
 /* Iron Man Hologram Styles */
 .hologram-container {
     position: absolute;
-    left: 20px; /* Align with corner boxes */
+    left: 50%;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%); /* Center the hologram */
     width: 450px; /* Increased width */
     height: 550px; /* Significantly increased height */
     pointer-events: none;
@@ -203,11 +187,13 @@ canvas {
 .top-right {
     top: 20px;
     right: 20px;
+    padding-top: 30px; /* Make space for the header */
 }
 
 .bottom-left {
     bottom: 20px;
     left: 20px;
+    padding-top: 30px; /* Make space for the header */
 }
 
 .bottom-right {
@@ -236,4 +222,30 @@ canvas {
     transform: translateX(-50%);
     bottom: auto;
     right: auto;
+}
+
+/* Add header styling for bottom-left box */
+.corner-box.bottom-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: rgba(0, 170, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+    border-radius: 4px 4px 0 0;
+    z-index: 1;
+}
+
+.corner-box.bottom-left::after {
+    content: '📁 Media Library';
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    color: #00aaff;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 2;
 }

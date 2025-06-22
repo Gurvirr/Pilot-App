@@ -31,7 +31,7 @@ class SystemInfoDisplay {
         infoContainer.className = 'system-info-container';
         infoContainer.style.cssText = `
             width: 100%;
-            height: 60%; /* Adjusted height for three rows */
+            height: 70%; /* Increased height to accommodate spacing */
             padding: 10px;
             color: #00aaff;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
@@ -39,15 +39,17 @@ class SystemInfoDisplay {
             background: transparent;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* Distribute space between items */
+            justify-content: space-around; /* Changed from space-between to space-around for better spacing */
+            gap: 15px; /* Added explicit gap between elements */
         `;
 
         // --- Network Graph Container (Top) ---
         const networkContainer = document.createElement('div');
         networkContainer.style.cssText = `
             width: 80%; /* 20% less length */
-            height: 32%; /* Approx 1/3 of the height */
+            height: 25%; /* Reduced from 32% to 25% */
             position: relative;
+            margin-bottom: 8px; /* Added margin for extra spacing */
         `;
         
         const networkLabel = document.createElement('div');
@@ -55,7 +57,7 @@ class SystemInfoDisplay {
         networkLabel.textContent = 'Network: --MB/s';
         networkLabel.style.cssText = `
             position: absolute;
-            top: 5px;
+            top: -2px;
             left: 5px;
             z-index: 10;
             color: #00aaff;
@@ -68,6 +70,7 @@ class SystemInfoDisplay {
             width: 100%;
             height: 100%;
             border-radius: 4px;
+            margin-top: 18px;
         `;
         
         networkContainer.appendChild(networkLabel);
@@ -77,8 +80,9 @@ class SystemInfoDisplay {
         const cpuContainer = document.createElement('div');
         cpuContainer.style.cssText = `
             width: 60%; /* 40% less length */
-            height: 32%; /* Approx 1/3 of the height */
+            height: 25%; /* Reduced from 32% to 25% */
             position: relative;
+            margin-bottom: 8px; /* Added margin for extra spacing */
         `;
         
         const cpuLabel = document.createElement('div');
@@ -86,7 +90,7 @@ class SystemInfoDisplay {
         cpuLabel.textContent = 'CPU: --%';
         cpuLabel.style.cssText = `
             position: absolute;
-            top: 5px;
+            top: -2px;
             left: 5px;
             z-index: 10;
             color: #ff4444;
@@ -99,6 +103,7 @@ class SystemInfoDisplay {
             width: 100%;
             height: 100%;
             border-radius: 4px;
+            margin-top: 18px;
         `;
         
         cpuContainer.appendChild(cpuLabel);
@@ -108,8 +113,9 @@ class SystemInfoDisplay {
         const memoryContainer = document.createElement('div');
         memoryContainer.style.cssText = `
             width: 40%; /* 50% less length */
-            height: 32%; /* Approx 1/3 of the height */
+            height: 25%; /* Reduced from 32% to 25% */
             position: relative;
+            margin-bottom: 8px; /* Added margin for extra spacing */
         `;
         
         const memoryLabel = document.createElement('div');

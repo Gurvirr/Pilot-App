@@ -208,10 +208,10 @@ function setupAudioVisualizer(canvasInfo) {
             const baseSineOffset = sineWave1 + sineWave2;
             
             // Use the smoothed audio data for gradual changes
-            const audioAmplitude = smoothedAudioData[i] * maxSafeBarLength;
+            const circularBarAmplitude = smoothedAudioData[i] * maxSafeBarLength;
             
             // Combine base sine with audio and clamp to safe length
-            const rawBarLength = Math.max(8, baseSineOffset + audioAmplitude); // Increased minimum from 5 to 8
+            const rawBarLength = Math.max(8, baseSineOffset + circularBarAmplitude); // Increased minimum from 5 to 8
             const totalBarLength = Math.min(rawBarLength, maxSafeBarLength);
             
             // Calculate bar positions
@@ -223,34 +223,32 @@ function setupAudioVisualizer(canvasInfo) {
             const outerX = centerX + Math.cos(angle) * outerRadius;
             const outerY = centerY + Math.sin(angle) * outerRadius;
             
-            // Neon blue color scheme with variation
-            const intensity = smoothedAudioData[i];
-            const baseBlue = 180;
-            const hueVariation = Math.sin(i * 0.1 + frame * 0.01) * 20; // Slower color changes
-            const hue = baseBlue + hueVariation;
-            const saturation = 90 + intensity * 10;
-            const lightness = 40 + intensity * 50;
+            // Draw audio-reactive wave
+            const baseAmplitude = 10;
+            const reactiveAmplitude = smoothedAudioData[i] * 80; // Increased sensitivity
+            const totalAmplitude = baseAmplitude + reactiveAmplitude;
             
-            // Draw the main bar with neon blue
+            // Keep consistent blue color
+            let color = '#00d4ff'; // Always blue
+            let glowColor = '#00aaff'; // Slightly darker blue for glow
+
+            // Set line style
+            ctx.lineWidth = 1 + smoothedAudioData[i] * 4;
+            ctx.strokeStyle = color;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 3 + smoothedAudioData[i] * 20;
+            
             ctx.beginPath();
-            ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.9)`;
-            ctx.lineWidth = 5;
-            ctx.lineCap = 'round';
-            
-            // Moderate neon glow effect
-            ctx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness + 30}%, 1)`;
-            ctx.shadowBlur = 12 + intensity * 15;
-            
             ctx.moveTo(innerX, innerY);
             ctx.lineTo(outerX, outerY);
             ctx.stroke();
             
             // Add bright inner core for higher-intensity bars
-            if (intensity > 0.3) {
+            if (smoothedAudioData[i] > 0.3) {
                 ctx.beginPath();
                 ctx.strokeStyle = `hsla(${hue}, 100%, ${Math.min(lightness + 50, 95)}%, 0.8)`;
                 ctx.lineWidth = 3;
-                ctx.shadowBlur = 20 + intensity * 10;
+                ctx.shadowBlur = 20 + smoothedAudioData[i] * 10;
                 ctx.shadowColor = `hsla(${hue}, 100%, 90%, 0.9)`;
                 
                 const coreLength = totalBarLength * 0.7;
@@ -264,7 +262,7 @@ function setupAudioVisualizer(canvasInfo) {
             }
             
             // Add ultra-bright tip for very high intensity
-            if (intensity > 0.6) {
+            if (smoothedAudioData[i] > 0.6) {
                 ctx.beginPath();
                 ctx.strokeStyle = `hsla(${hue}, 100%, 95%, 1)`;
                 ctx.lineWidth = 2;
@@ -440,11 +438,11 @@ function setupCanvas(canvasInfo) {
             const barActualWidth = barWidth * 0.6; // Leave space between bars
             const y = height - totalHeight; // Start from bottom
             
-            // Color based on height and position
+            // Color based on height and position - changed to blue spectrum
             const intensity = totalHeight / (height * 0.4);
-            const hue = 0 + i * 8; // Red spectrum with variations
-            const saturation = 70 + intensity * 20;
-            const lightness = 40 + intensity * 40;
+            const hue = 190 + i * 3; // Blue spectrum (190-220) with subtle variations
+            const saturation = 80 + intensity * 15;
+            const lightness = 50 + intensity * 30;
             const opacity = 0.7 + intensity * 0.3;
             
             // Draw the vertical bar
