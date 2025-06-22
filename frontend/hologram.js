@@ -94,14 +94,14 @@ class IronManHologram {
                 // Apply hologram effect to the model with clipping
                 this.applyHologramEffect(this.hologram);
                 
-                // Scale and position the model
-                this.hologram.scale.set(2.3, 2.3, 2.3);
+                // Scale the model smaller
+                this.hologram.scale.set(2.0, 2.0, 2.0); // Reduced from 3.2 to 2.0
                 
                 // IMPORTANT: Set position AFTER adding to scene
                 this.scene.add(this.hologram);
                 
-                // Position model down to re-center it in the larger container
-                this.hologram.position.set(-1.1, -3.1, 0); 
+                // Position model to center it in the container
+                this.hologram.position.set(0, -2.5, 0); // Centered horizontally (0) and better vertical position (-2.5)
                 
                 // Add minimal lighting (no aura)
                 this.setupLighting();
@@ -158,9 +158,9 @@ class IronManHologram {
         if (this.hologram) {
             this.hologram.rotation.y += 0.01; // Only Y-axis rotation
             
-            // Keep position completely fixed - move it down
-            this.hologram.position.x = -1.1; 
-            this.hologram.position.y = -3.1; // Move down
+            // Keep position completely fixed and centered
+            this.hologram.position.x = 0; // Centered horizontally
+            this.hologram.position.y = -2.5; // Centered vertically
             this.hologram.position.z = 0;
         }
 

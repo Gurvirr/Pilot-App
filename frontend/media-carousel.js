@@ -4,7 +4,9 @@ class MediaCarousel {
         this.currentIndex = 0;
         this.mediaItems = [];
         this.autoRotateInterval = null;
+        this.autoRefreshInterval = null;
         this.rotationSpeed = 4000; // 4 seconds per slide
+        this.refreshSpeed = 10000; // Check for new files every 10 seconds
         
         this.init();
     }
@@ -26,6 +28,9 @@ class MediaCarousel {
         
         // Start auto-rotation
         this.startAutoRotation();
+        
+        // Start auto-refresh for new files
+        this.startAutoRefresh();
         
         console.log('✅ Auto-rotating media carousel initialized');
     }
@@ -125,21 +130,45 @@ class MediaCarousel {
             // Request media files from main process
             const mediaFiles = await ipcRenderer.invoke('get-media-files');
             
-            this.mediaItems = mediaFiles.map(file => ({
+            const newMediaItems = mediaFiles.map(file => ({
                 name: file.name,
                 path: file.path,
                 type: file.type, // 'image' or 'video'
                 thumbnail: file.thumbnail || file.path // Use thumbnail if available
             }));
             
+            // Check if we have new items
+            const hasNewItems = newMediaItems.length !== this.mediaItems.length || 
+                newMediaItems.some((item, index) => 
+                    !this.mediaItems[index] || this.mediaItems[index].path !== item.path
+                );
+            
+            if (hasNewItems) {
+                console.log(`📁 Found ${newMediaItems.length} media files (${newMediaItems.length - this.mediaItems.length} new)`);
+                this.mediaItems = newMediaItems;
+                
+                // Reset to first item if we have new items and current index is out of bounds
+                if (this.currentIndex >= this.mediaItems.length) {
+                    this.currentIndex = 0;
+                }
+                
+                return true; // Indicate that items were updated
+            }
+            
+            return false; // No new items
+            
         } catch (error) {
             console.log('Could not load media files:', error);
             // Fallback with mock data for testing
-            this.mediaItems = [
-                { name: 'Sample 1', path: '/mock/path1.jpg', type: 'image' },
-                { name: 'Sample 2', path: '/mock/path2.mp4', type: 'video' },
-                { name: 'Sample 3', path: '/mock/path3.png', type: 'image' }
-            ];
+            if (this.mediaItems.length === 0) {
+                this.mediaItems = [
+                    { name: 'Sample 1', path: '/mock/path1.jpg', type: 'image' },
+                    { name: 'Sample 2', path: '/mock/path2.mp4', type: 'video' },
+                    { name: 'Sample 3', path: '/mock/path3.png', type: 'image' }
+                ];
+                return true;
+            }
+            return false;
         }
     }
 
@@ -241,6 +270,7 @@ class MediaCarousel {
                 max-height: 100%;
                 object-fit: contain;
                 display: block;
+                opacity: 0.95; /* Much less transparent - was default 1.0, now 0.95 */
             `;
             
             img.onload = () => {
@@ -252,7 +282,7 @@ class MediaCarousel {
                 // Fallback to icon if image fails to load
                 contentContainer.innerHTML = '';
                 contentContainer.innerHTML = `
-                    <div style="font-size: 48px; color: #00aaff; text-align: center;">
+                    <div style="font-size: 48px; color: #00aaff; text-align: center; opacity: 0.95;">
                         🖼️<br>
                         <span style="font-size: 14px;">Image Preview</span>
                     </div>
@@ -263,7 +293,7 @@ class MediaCarousel {
         } else {
             // For videos, show video icon and info
             contentContainer.innerHTML = `
-                <div style="font-size: 48px; color: #00aaff; text-align: center;">
+                <div style="font-size: 48px; color: #00aaff; text-align: center; opacity: 0.95;">
                     🎥<br>
                     <span style="font-size: 14px; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;">Video Preview</span>
                 </div>
@@ -321,12 +351,45 @@ class MediaCarousel {
         }, 50);
     }
 
+    startAutoRefresh() {
+        console.log(`🔄 Starting auto-refresh (checking every ${this.refreshSpeed}ms)`);
+        
+        // Clear any existing refresh interval
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+
+        // Set up refresh interval
+        this.autoRefreshInterval = setInterval(async () => {
+            const hasNewItems = await this.loadMediaItems();
+            if (hasNewItems) {
+                console.log('🆕 New media files detected, updating carousel...');
+                this.renderCarousel(); // Re-render with new items
+            }
+        }, this.refreshSpeed);
+    }
+
+    stopAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+            console.log('⏹️ Auto-refresh stopped');
+        }
+    }
+
     stopAutoRotation() {
         if (this.autoRotateInterval) {
             clearInterval(this.autoRotateInterval);
             this.autoRotateInterval = null;
             console.log('⏹️ Auto-rotation stopped');
         }
+    }
+
+    // Cleanup method
+    destroy() {
+        this.stopAutoRotation();
+        this.stopAutoRefresh();
+        console.log('🗑️ Media carousel destroyed');
     }
 
     // Remove all the old click-based methods
