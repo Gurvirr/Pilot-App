@@ -4,6 +4,7 @@ python-dotenv
 elevenlabs
 pygame
 requests
+flask
 
 # OBS WebSocket integration
 obsws-python
