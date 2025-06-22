@@ -12,6 +12,7 @@ function createWindow () {
     alwaysOnTop: true,
     skipTaskbar: true,
     focusable: false,
+    clickThrough: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -31,6 +32,9 @@ function createWindow () {
       win.show();
     }
   });
+
+  // Set window to ignore mouse events (except for specific areas)
+  win.setIgnoreMouseEvents(true, { forward: true });
 }
 
 app.whenReady().then(createWindow);
