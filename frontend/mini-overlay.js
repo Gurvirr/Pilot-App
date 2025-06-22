@@ -61,54 +61,79 @@ class MiniOverlay {
     initMiniRing() {
         const canvas = document.getElementById('mini-ring-canvas');
         if (!canvas) return;
-        
+
         const ctx = canvas.getContext('2d');
         let frame = 0;
-        
+        let audioContext, analyser, dataArray, bufferLength;
+        let isAudioInitialized = false;
+        let audioLevel = 0;
+
         // Set canvas size
         const resizeCanvas = () => {
             const size = 60; // Small ring size
             canvas.width = size;
             canvas.height = size;
         };
-        
+
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
-        
+
+        // Microphone setup
+        const initAudio = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 128;
+                bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                isAudioInitialized = true;
+            } catch (e) {
+                isAudioInitialized = false;
+            }
+        };
+        initAudio();
+
         // Animation loop
         const animate = () => {
             frame += 0.05;
-            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const radius = 20;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw ring based on state
+            const baseRadius = 20;
+            let dynamicRadius = baseRadius;
+
+            // Get audio level
+            if (isAudioInitialized && analyser) {
+                analyser.getByteTimeDomainData(dataArray);
+                // Calculate RMS (root mean square) for volume
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    let v = (dataArray[i] - 128) / 128;
+                    sum += v * v;
+                }
+                audioLevel = Math.sqrt(sum / bufferLength);
+                // Animate radius based on audio level
+                dynamicRadius += audioLevel * 18; // scale up for visibility
+            } else {
+                // fallback idle animation
+                dynamicRadius += Math.sin(frame) * 2;
+            }
+
+            // Draw animated ring
+            ctx.save();
             ctx.strokeStyle = this.getRingColor();
             ctx.lineWidth = 2;
             ctx.globalAlpha = 0.8;
-            
-            // Draw animated ring
-            const segments = 12;
-            for (let i = 0; i < segments; i++) {
-                const angle = (i / segments) * Math.PI * 2 + frame;
-                const startAngle = angle;
-                const endAngle = angle + (Math.PI * 2) / (segments * 2);
-                
-                const alpha = (Math.sin(frame + i * 0.5) + 1) / 2;
-                ctx.globalAlpha = alpha * 0.8;
-                
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-                ctx.stroke();
-            }
-            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, dynamicRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
             requestAnimationFrame(animate);
         };
-        
         animate();
     }
     
@@ -179,8 +204,8 @@ class MiniOverlay {
                     background: rgba(10, 10, 10, 0.9);
                     border: 1px solid rgba(0, 170, 255, 0.3);
                     border-radius: 4px;
-                    width: 280px;
-                    max-height: 200px;
+                    width: 240px; /* Was 280px */
+                    max-height: 150px; /* Was 200px */
                     font-size: 10px;
                     color: #00aaff;
                     overflow: hidden;
@@ -199,7 +224,7 @@ class MiniOverlay {
                 
                 .mini-log-content {
                     padding: 6px;
-                    max-height: 160px;
+                    max-height: 110px; /* Was 160px */
                     overflow-y: auto;
                     overflow-x: hidden;
                 }

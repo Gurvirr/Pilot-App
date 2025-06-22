@@ -7,12 +7,20 @@ import subprocess
 import re
 import winapps
 import webbrowser
+import urllib.parse
 from google import genai
 from pydantic import BaseModel
 from typing import Literal, Optional
 import cv2
 import macros
 import json
+
+import clip 
+
+def clip_screen():
+    print("Saving clip") 
+    clip.save_clip()
+import cv2
 
 import clip 
 
@@ -40,7 +48,10 @@ def action_list():
         "type_ai_message",
         "list_steam_games",
         "quit_game",
-        "take_picture"
+        "take_picture",
+        "take_picture",
+        "open_website",
+        "search_web"
     ]
 
 def screenshot():
@@ -100,6 +111,52 @@ def take_picture():
 
     # Release the camera
     cap.release()
+
+def open_website(website_name: str):
+    """Opens a website in the default browser."""
+    website_name = website_name.lower().replace(" ", "")
+    sites = {
+        "youtube": "https://www.youtube.com",
+        "reddit": "https://www.reddit.com",
+        "instagram": "https://www.instagram.com",
+        "google": "https://www.google.com",
+        "github": "https://github.com",
+        "chatgpt": "https://chat.openai.com",
+        "gpt": "https://chat.openai.com",
+        "gemini": "https://gemini.google.com",
+        "amazon": "https://www.amazon.com",
+        "netflix": "https://www.netflix.com",
+        "twitter": "https://www.x.com",
+        "x": "https://www.x.com",
+        "facebook": "https://www.facebook.com",
+        "wikipedia": "https://www.wikipedia.org",
+    }
+    
+    url = sites.get(website_name)
+
+    if not url:
+        if '.' not in website_name:
+            website_name += ".com"
+        url = "https://" + website_name
+
+    try:
+        webbrowser.open(url, new=2)
+        print(f"✅ Opening {url} in browser.")
+        return 
+    except Exception as e:
+        print(f"❌ Failed to open website {website_name}: {e}")
+        return f"Sorry, I couldn't open that website."
+
+def search_web(query: str):
+    """Performs a web search using the default browser."""
+    try:
+        search_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(query)}"
+        webbrowser.open(search_url, new=2)
+        print(f"✅ Searching for '{query}' on Google.")
+        return
+    except Exception as e:
+        print(f"❌ Failed to perform web search for '{query}': {e}")
+        return "Sorry, I ran into an error trying to search for that."
 
 def _find_and_launch_shortcut(app_name):
     """Finds and launches a shortcut (.lnk) in common locations on Windows."""
@@ -253,7 +310,7 @@ def open_app(app_name):
         try:
             webbrowser.open(uri_schemes[app_lower])
             print(f"✅ Opened {app_name} via {uri_schemes[app_lower]} protocol")
-            return f"Opened {app_name}."
+            return
         except Exception as e:
             print(f"⚠️ {app_name} protocol failed: {e}")
 
@@ -276,13 +333,13 @@ def open_app(app_name):
         try:
             subprocess.Popen(system_apps[app_lower], shell=True)
             print(f"✅ Launched system tool '{app_name}' via command '{system_apps[app_lower]}'.")
-            return 
+            return
         except Exception as e:
             print(f"⚠️ Failed to launch system tool '{app_name}': {e}")
 
     # Method 3: Search for shortcuts (finds most user-installed GUI apps)
     if _find_and_launch_shortcut(app_name):
-        return 
+        return
 
     # Method 4: If the app name has spaces, try a sanitized version (e.g., "snipping tool" -> "snippingtool")
     if ' ' in app_name:
@@ -291,7 +348,7 @@ def open_app(app_name):
             # Use Popen directly for this, as 'start' can be unpredictable with sanitized names
             subprocess.Popen(sanitized_name, shell=True)
             print(f"✅ Launched '{app_name}' by sanitizing its name to '{sanitized_name}'.")
-            return 
+            return
         except FileNotFoundError:
             print(f"ℹ️ Sanitized name '{sanitized_name}' not found. Continuing...")
         except Exception as e:
@@ -302,7 +359,7 @@ def open_app(app_name):
         subprocess.Popen(f'start "" "{app_name}"', shell=True)
         print(f"✅ Attempted to open '{app_name}' via the 'start' command. This is often successful for registered apps or items in PATH.")
         # This command doesn't block or easily confirm success, so we assume it works if no error is thrown.
-        return 
+        return
     except Exception as e:
         print(f"ℹ️ The 'start' command failed for '{app_name}': {e}. Trying final methods.")
 
@@ -315,7 +372,7 @@ def open_app(app_name):
             try:
                 subprocess.Popen(f'start "" "{app.name}"', shell=True)
                 print(f"✅ Attempting to launch registered app '{app.name}' via 'start'.")
-                return 
+                return
             except Exception as e:
                 print(f"ℹ️ 'start' command failed for winapps result '{app.name}': {e}. Trying to parse executable from uninstall string.")
 
@@ -327,7 +384,7 @@ def open_app(app_name):
                         try:
                             subprocess.Popen(f'"{match}"', shell=True)
                             print(f"✅ Opened {app.name} via uninstall string parse: {match}")
-                            return 
+                            return
                         except Exception as e:
                             print(f"⚠️ Failed to launch {match} from uninstall string: {e}")
     except Exception as e:
@@ -399,6 +456,7 @@ def close_app(app_name):
         # exit code 128 means process not found.
         if result.returncode == 0:
             print(f"✅ Successfully closed '{app_name}' (process: {process_name}).")
+            return
             return
         elif result.returncode == 128 or "not found" in result.stderr.lower():
             print(f"ℹ️ Application '{app_name}' (process: {process_name}) was not running or could not be found with that name.")

@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "dotenv": "^16.5.0",
+    "node-media-controller": "^0.0.6",
     "os-utils": "^0.0.14",
     "systeminformation": "^5.27.6"
   }

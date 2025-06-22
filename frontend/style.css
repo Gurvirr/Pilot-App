@@ -26,6 +26,23 @@ body.full-view .center-visualizer {
     display: block; /* Ensure it's visible in full view */
 }
 
+/* View state management */
+body.mini-view .overlay-container {
+    display: none;
+}
+
+body.mini-view .center-visualizer {
+    display: block; /* Ensure it's visible in mini view */
+}
+
+body.full-view .mini-overlay {
+    display: none !important;
+}
+
+body.full-view .center-visualizer {
+    display: block; /* Ensure it's visible in full view */
+}
+
 .overlay-container {
     position: relative;
     width: 100%;
@@ -42,10 +59,37 @@ body.full-view .center-visualizer {
     backdrop-filter: blur(80px);
     -webkit-backdrop-filter: blur(80px);
     border-radius: 4px; /* Reduced from 12px */
+    border-radius: 4px; /* Reduced from 12px */
     padding: 0; /* Remove padding to let canvas fill the box */
     box-sizing: border-box;
     -webkit-app-region: no-drag;
     pointer-events: none; /* Allow clicks to pass through */
+}
+
+/* Add header styling for top-left box to match Jarvis messages */
+.corner-box.top-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: rgba(0, 170, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.3);
+    border-radius: 4px 4px 0 0;
+    z-index: 1;
+}
+
+.corner-box.top-left::after {
+    content: '📊 System Monitor';
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    color: #00aaff;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 2;
 }
 
 /* Add header styling for top-left box to match Jarvis messages */
@@ -99,14 +143,14 @@ body.full-view .center-visualizer {
 /* Iron Man Hologram Styles */
 .hologram-container {
     position: absolute;
-    left: 50px;
+    left: 20px; /* Align with corner boxes */
     top: 50%;
     transform: translateY(-50%);
-    width: 300px; /* Made smaller */
-    height: 300px; /* Made smaller */
+    width: 450px; /* Increased width */
+    height: 550px; /* Significantly increased height */
     pointer-events: none;
     z-index: 10;
-    transition: all 0.3s ease-in-out; /* Faster transition */
+    transition: all 0.3s ease-in-out;
 }
 
 #hologram-canvas {

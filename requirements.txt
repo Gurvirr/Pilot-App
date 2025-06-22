@@ -6,6 +6,7 @@ pygame
 requests
 flask
 flask-socketio
+flask-socketio
 
 # OBS WebSocket integration
 obsws-python
