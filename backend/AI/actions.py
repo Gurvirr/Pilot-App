@@ -56,17 +56,56 @@ def open_app(app_name):
     """Open an application by its name."""
     print(f"Attempting to open application: {app_name}")
     
-    try:
-        # Method 1: Try using winapps to find and start the app
+    try:        # Method 1: Try using winapps to find app install location (winapps can't launch directly!)
         installed_apps = winapps.list_installed()
         
         # Search for app by name (case-insensitive, partial match)
         for app in installed_apps:
             if app_name.lower() in app.name.lower():
                 print(f"Found app: {app.name}")
-                app.start()
-                print(f"✅ Opened {app.name}")
-                return True        # Method 2: Try common executable names and specific paths
+                
+                # winapps doesn't have start() method! We need to find the exe manually
+                exe_path = None
+                
+                # Try to get exe from install_location
+                if hasattr(app, 'install_location') and app.install_location:
+                    install_dir = app.install_location
+                    print(f"Install location: {install_dir}")
+                    
+                    # Look for exe files in install directory
+                    if os.path.exists(install_dir):
+                        for file in os.listdir(install_dir):
+                            if file.lower().endswith('.exe') and app_name.lower() in file.lower():
+                                exe_path = os.path.join(install_dir, file)
+                                break
+                
+                # Try to extract exe from uninstall_string
+                if not exe_path and hasattr(app, 'uninstall_string') and app.uninstall_string:
+                    uninstall = app.uninstall_string
+                    # Look for exe files that aren't uninstallers
+                    import re
+                    exe_matches = re.findall(r'"([^"]*\.exe)"', uninstall)
+                    for match in exe_matches:
+                        if 'uninstall' not in match.lower() and os.path.exists(match):
+                            exe_path = match
+                            break
+                
+                # Try to launch the found executable
+                if exe_path:
+                    try:
+                        subprocess.Popen(f'"{exe_path}"', shell=True)
+                        print(f"✅ Opened {app.name} via {exe_path}")
+                        return True
+                    except Exception as e:
+                        print(f"⚠️ Failed to launch {exe_path}: {e}")
+                
+                # If no exe found, try generic approach
+                try:
+                    subprocess.Popen(f'start "" "{app.name}"', shell=True)
+                    print(f"✅ Attempted to open {app.name} via Windows start")
+                    return True
+                except Exception as e:
+                    print(f"⚠️ Windows start failed: {e}")# Method 2: Try common executable names and specific paths
         common_apps = {
             "notepad": "notepad.exe",
             "calculator": "calc.exe", 

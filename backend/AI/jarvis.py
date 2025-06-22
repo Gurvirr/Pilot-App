@@ -81,7 +81,7 @@ def jarvis_query(prompt):
 #     if "clip" in prompt:
 #         return "[Mock] Clipping last 30 seconds..."
 #     elif "make fun" in prompt:
-#         return "[Mock] Roasting user's stats..."
+#         return "[] Roasting user's stats..."
 #     elif "dox" in prompt:
 #         return "Nope. That's not allowed. jarvis draws the line at doxing."
 #     else:
@@ -104,8 +104,8 @@ def execute_action(intent, context):
     # elif intent == "play_music":
     #     playsound("sick_track.mp3")  # Add your music path
     elif intent == "open_app":
-        print(f"[Mock] Opening application: {context['app_name']}")
-        # actions.open_app(context["app_name"])  # Windows
+        # print(f"[Mock] Opening application: {context['app_name']}")
+        actions.open_app(context["app_name"])  # Windows
     # elif intent == "quit_game":
         # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
     elif intent == "afk":
