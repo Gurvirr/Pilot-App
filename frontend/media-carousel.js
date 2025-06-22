@@ -3,8 +3,8 @@ class MediaCarousel {
         this.container = document.querySelector('.bottom-left');
         this.currentIndex = 0;
         this.mediaItems = [];
-        this.thumbnailSize = 100;
-        this.visibleThumbnails = 4;
+        this.autoRotateInterval = null;
+        this.rotationSpeed = 4000; // 4 seconds per slide
         
         this.init();
     }
@@ -13,14 +13,7 @@ class MediaCarousel {
         // Clear the container
         this.container.innerHTML = '';
         
-        // Enable mouse events for this area
-        try {
-            const { ipcRenderer } = require('electron');
-            await ipcRenderer.invoke('set-mouse-events', true);
-            console.log('🖱️ Mouse events enabled for media carousel');
-        } catch (error) {
-            console.log('⚠️ Could not enable mouse events:', error);
-        }
+        console.log('🎬 Initializing auto-rotating media carousel...');
         
         // Create carousel structure
         this.createCarouselElements();
@@ -31,11 +24,10 @@ class MediaCarousel {
         // Render initial view
         this.renderCarousel();
         
-        // Set up event listeners
-        this.setupEventListeners();
+        // Start auto-rotation
+        this.startAutoRotation();
         
-        // Add hover detection for mouse events
-        this.setupMouseEventManagement();
+        console.log('✅ Auto-rotating media carousel initialized');
     }
 
     createCarouselElements() {
@@ -45,13 +37,13 @@ class MediaCarousel {
         carouselContainer.style.cssText = `
             width: 100%;
             height: 100%;
-            padding: 35px 15px 15px 15px; /* More padding for larger window */
+            padding: 35px 15px 15px 15px;
             display: flex;
             flex-direction: column;
-            background: rgba(10, 10, 10, 0.3); /* Slight background for visibility */
+            background: rgba(10, 10, 10, 0.3);
             overflow: hidden;
             box-sizing: border-box;
-            pointer-events: auto; /* Ensure clicks work */
+            pointer-events: none; /* Disable all interactions */
         `;
 
         // Create header
@@ -69,7 +61,7 @@ class MediaCarousel {
         `;
 
         const title = document.createElement('span');
-        title.textContent = 'Media Library';
+        title.textContent = 'Media Slideshow';
         title.style.fontWeight = 'bold';
 
         const counter = document.createElement('span');
@@ -79,92 +71,48 @@ class MediaCarousel {
         header.appendChild(title);
         header.appendChild(counter);
 
-        // Create scrollable thumbnails container
-        const thumbnailsWrapper = document.createElement('div');
-        thumbnailsWrapper.style.cssText = `
+        // Create main display area for current media
+        const displayArea = document.createElement('div');
+        displayArea.id = 'main-display';
+        displayArea.style.cssText = `
             flex: 1;
-            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            background: rgba(0, 170, 255, 0.05);
+            border: 1px solid rgba(0, 170, 255, 0.2);
             margin-bottom: 15px;
         `;
 
-        const thumbnailsContainer = document.createElement('div');
-        thumbnailsContainer.id = 'thumbnails-container';
-        thumbnailsContainer.style.cssText = `
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            height: 100%;
-            padding-right: 10px; /* Prevent clipping on right side */
-            box-sizing: border-box;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(0, 170, 255, 0.5) transparent;
-        `;
-
-        // Custom scrollbar styling
-        const style = document.createElement('style');
-        style.textContent = `
-            #thumbnails-container::-webkit-scrollbar {
-                width: 6px;
-            }
-            #thumbnails-container::-webkit-scrollbar-track {
-                background: rgba(0, 170, 255, 0.1);
-                border-radius: 3px;
-            }
-            #thumbnails-container::-webkit-scrollbar-thumb {
-                background: rgba(0, 170, 255, 0.5);
-                border-radius: 3px;
-            }
-            #thumbnails-container::-webkit-scrollbar-thumb:hover {
-                background: rgba(0, 170, 255, 0.8);
-            }
-        `;
-        document.head.appendChild(style);
-
-        thumbnailsWrapper.appendChild(thumbnailsContainer);
-
-        // Create refresh button instead of navigation
-        const controlsContainer = document.createElement('div');
-        controlsContainer.style.cssText = `
-            display: flex;
-            justify-content: center;
-            gap: 10px;
+        // Create progress bar
+        const progressContainer = document.createElement('div');
+        progressContainer.style.cssText = `
+            height: 4px;
+            background: rgba(0, 170, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
             flex-shrink: 0;
         `;
 
-        const refreshButton = document.createElement('button');
-        refreshButton.id = 'refresh-btn';
-        refreshButton.innerHTML = '🔄 Refresh';
-        refreshButton.style.cssText = `
-            background: rgba(0, 170, 255, 0.2);
-            border: 1px solid rgba(0, 170, 255, 0.5);
-            color: #00aaff;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-            transition: all 0.2s ease;
+        const progressBar = document.createElement('div');
+        progressBar.id = 'progress-bar';
+        progressBar.style.cssText = `
+            height: 100%;
+            background: linear-gradient(90deg, #00aaff, #0080ff);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 2px;
         `;
 
-        refreshButton.addEventListener('mouseenter', () => {
-            refreshButton.style.background = 'rgba(0, 170, 255, 0.3)';
-            refreshButton.style.borderColor = 'rgba(0, 170, 255, 0.8)';
-        });
-
-        refreshButton.addEventListener('mouseleave', () => {
-            refreshButton.style.background = 'rgba(0, 170, 255, 0.2)';
-            refreshButton.style.borderColor = 'rgba(0, 170, 255, 0.5)';
-        });
-
-        controlsContainer.appendChild(refreshButton);
+        progressContainer.appendChild(progressBar);
 
         // Assemble carousel
         carouselContainer.appendChild(header);
-        carouselContainer.appendChild(thumbnailsWrapper);
-        carouselContainer.appendChild(controlsContainer);
+        carouselContainer.appendChild(displayArea);
+        carouselContainer.appendChild(progressContainer);
         
         this.container.appendChild(carouselContainer);
     }
@@ -196,251 +144,199 @@ class MediaCarousel {
     }
 
     renderCarousel() {
-        const container = document.getElementById('thumbnails-container');
+        const displayArea = document.getElementById('main-display');
         const counter = document.getElementById('media-counter');
         
-        if (!container) return;
-        
-        // Clear existing thumbnails
-        container.innerHTML = '';
+        if (!displayArea || this.mediaItems.length === 0) return;
         
         // Update counter
-        counter.textContent = `${this.mediaItems.length} items`;
+        counter.textContent = `${this.currentIndex + 1} / ${this.mediaItems.length}`;
         
-        // Create thumbnail elements
-        this.mediaItems.forEach((item, index) => {
-            const thumbnail = document.createElement('div');
-            thumbnail.className = 'media-thumbnail';
-            thumbnail.style.cssText = `
-                width: ${this.thumbnailSize}px;
-                height: ${this.thumbnailSize}px;
-                background: rgba(0, 170, 255, 0.15); /* More opaque background */
-                border: 2px solid rgba(0, 170, 255, 0.4); /* More visible border */
-                border-radius: 6px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                position: relative;
-                overflow: hidden;
-                flex-shrink: 0;
-                box-sizing: border-box;
-                pointer-events: auto; /* Explicitly enable clicks */
-                z-index: 10; /* Ensure it's above other elements */
-            `;
+        // Clear display area
+        displayArea.innerHTML = '';
+        
+        const currentItem = this.mediaItems[this.currentIndex];
+        
+        // Create item display
+        const itemContainer = document.createElement('div');
+        itemContainer.style.cssText = `
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: slideIn 0.5s ease-in-out;
+        `;
 
-            // Add type indicator
-            const typeIndicator = document.createElement('div');
-            typeIndicator.style.cssText = `
-                position: absolute;
-                top: 4px;
-                right: 4px;
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 3px 6px;
-                border-radius: 3px;
-                font-size: 10px;
-                font-weight: bold;
-                z-index: 3;
-                pointer-events: none;
-            `;
-            typeIndicator.textContent = item.type === 'video' ? '🎥' : '🖼️';
-
-            // Add filename
-            const filename = document.createElement('div');
-            filename.style.cssText = `
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-                color: white;
-                padding: 8px 6px 4px 6px;
-                font-size: 9px;
-                text-overflow: ellipsis;
-                overflow: hidden;
-                white-space: nowrap;
-                z-index: 3;
-                pointer-events: none;
-                font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-            `;
-            filename.textContent = item.name;
-
-            // Create content container
-            const contentContainer = document.createElement('div');
-            contentContainer.style.cssText = `
-                width: 100%;
-                height: 100%;
-                position: relative;
-                overflow: hidden;
-                border-radius: 4px;
-            `;
-
-            // Try to load actual image/video thumbnail
-            if (item.type === 'image') {
-                const img = document.createElement('img');
-                img.src = `file://${item.path}`;
-                img.style.cssText = `
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                `;
-                
-                img.onload = () => {
-                    console.log(`✅ Loaded image: ${item.name}`);
-                };
-                
-                img.onerror = () => {
-                    console.log(`❌ Failed to load image: ${item.name}`);
-                    // Fallback to icon if image fails to load
-                    contentContainer.innerHTML = '';
-                    contentContainer.style.cssText += `
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 32px;
-                        color: #00aaff;
-                    `;
-                    contentContainer.textContent = '🖼️';
-                };
-                
-                contentContainer.appendChild(img);
-            } else {
-                // For videos, show video icon
-                contentContainer.style.cssText += `
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 32px;
-                    color: #00aaff;
-                    background: rgba(0, 170, 255, 0.05);
-                `;
-                contentContainer.textContent = '🎥';
+        // Add slide animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateX(20px); }
+                to { opacity: 1; transform: translateX(0); }
             }
+        `;
+        if (!document.querySelector('#carousel-styles')) {
+            style.id = 'carousel-styles';
+            document.head.appendChild(style);
+        }
 
-            // Assemble thumbnail
-            thumbnail.appendChild(contentContainer);
-            thumbnail.appendChild(typeIndicator);
-            thumbnail.appendChild(filename);
+        // Add type indicator
+        const typeIndicator = document.createElement('div');
+        typeIndicator.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 3;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        `;
+        typeIndicator.textContent = currentItem.type === 'video' ? '🎥 VIDEO' : '🖼️ IMAGE';
 
-            // Add click handler with better error handling
-            thumbnail.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log(`🖱️ Clicked on: ${item.name}`);
-                console.log(`📁 File path: ${item.path}`);
-                console.log(`📋 File type: ${item.type}`);
-                
-                try {
-                    // Add visual feedback
-                    thumbnail.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        thumbnail.style.transform = 'scale(1.05)';
-                    }, 100);
-                    
-                    await this.openMedia(item);
-                } catch (error) {
-                    console.error('Error in click handler:', error);
-                }
-            });
+        // Add filename
+        const filename = document.createElement('div');
+        filename.style.cssText = `
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: linear-gradient(transparent, rgba(0, 170, 255, 0.9));
+            color: white;
+            padding: 15px 12px 8px 12px;
+            font-size: 11px;
+            text-align: center;
+            z-index: 3;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-weight: bold;
+            border-radius: 0 0 6px 6px;
+        `;
+        filename.textContent = currentItem.name;
+
+        // Create content container
+        const contentContainer = document.createElement('div');
+        contentContainer.style.cssText = `
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+
+        // Try to load actual image/video preview
+        if (currentItem.type === 'image') {
+            const img = document.createElement('img');
+            img.src = `file://${currentItem.path}`;
+            img.style.cssText = `
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                display: block;
+            `;
             
-            // Add hover effects
-            thumbnail.addEventListener('mouseenter', () => {
-                thumbnail.style.borderColor = 'rgba(0, 170, 255, 0.8)';
-                thumbnail.style.transform = 'scale(1.05)';
-                thumbnail.style.boxShadow = '0 4px 12px rgba(0, 170, 255, 0.3)';
-            });
+            img.onload = () => {
+                console.log(`✅ Loaded image: ${currentItem.name}`);
+            };
             
-            thumbnail.addEventListener('mouseleave', () => {
-                thumbnail.style.borderColor = 'rgba(0, 170, 255, 0.3)';
-                thumbnail.style.transform = 'scale(1)';
-                thumbnail.style.boxShadow = 'none';
-            });
+            img.onerror = () => {
+                console.log(`❌ Failed to load image: ${currentItem.name}`);
+                // Fallback to icon if image fails to load
+                contentContainer.innerHTML = '';
+                contentContainer.innerHTML = `
+                    <div style="font-size: 48px; color: #00aaff; text-align: center;">
+                        🖼️<br>
+                        <span style="font-size: 14px;">Image Preview</span>
+                    </div>
+                `;
+            };
+            
+            contentContainer.appendChild(img);
+        } else {
+            // For videos, show video icon and info
+            contentContainer.innerHTML = `
+                <div style="font-size: 48px; color: #00aaff; text-align: center;">
+                    🎥<br>
+                    <span style="font-size: 14px; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;">Video Preview</span>
+                </div>
+            `;
+        }
 
-            container.appendChild(thumbnail);
-        });
+        // Assemble item
+        itemContainer.appendChild(contentContainer);
+        itemContainer.appendChild(typeIndicator);
+        itemContainer.appendChild(filename);
+
+        displayArea.appendChild(itemContainer);
     }
 
-    setupEventListeners() {
-        const refreshBtn = document.getElementById('refresh-btn');
-        
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async () => {
-                console.log('🔄 Refreshing media library...');
-                refreshBtn.innerHTML = '⏳ Loading...';
-                refreshBtn.disabled = true;
-                
-                try {
-                    await this.loadMediaItems();
-                    this.renderCarousel();
-                    console.log('✅ Media library refreshed');
-                } catch (error) {
-                    console.error('❌ Failed to refresh media library:', error);
-                } finally {
-                    refreshBtn.innerHTML = '🔄 Refresh';
-                    refreshBtn.disabled = false;
-                }
-            });
+    startAutoRotation() {
+        if (this.mediaItems.length <= 1) {
+            console.log('⚠️ Not enough media items for rotation');
+            return;
         }
+
+        console.log(`🔄 Starting auto-rotation (${this.rotationSpeed}ms intervals)`);
+        
+        // Clear any existing interval
+        if (this.autoRotateInterval) {
+            clearInterval(this.autoRotateInterval);
+        }
+
+        // Start progress bar animation
+        this.animateProgressBar();
+
+        // Set up rotation interval
+        this.autoRotateInterval = setInterval(() => {
+            this.nextSlide();
+        }, this.rotationSpeed);
+    }
+
+    nextSlide() {
+        this.currentIndex = (this.currentIndex + 1) % this.mediaItems.length;
+        this.renderCarousel();
+        this.animateProgressBar();
+    }
+
+    animateProgressBar() {
+        const progressBar = document.getElementById('progress-bar');
+        if (!progressBar) return;
+
+        // Reset progress bar
+        progressBar.style.width = '0%';
+        progressBar.style.transition = 'none';
+
+        // Start animation after a brief delay
+        setTimeout(() => {
+            progressBar.style.transition = `width ${this.rotationSpeed}ms linear`;
+            progressBar.style.width = '100%';
+        }, 50);
+    }
+
+    stopAutoRotation() {
+        if (this.autoRotateInterval) {
+            clearInterval(this.autoRotateInterval);
+            this.autoRotateInterval = null;
+            console.log('⏹️ Auto-rotation stopped');
+        }
+    }
+
+    // Remove all the old click-based methods
+    setupEventListeners() {
+        // No event listeners needed for auto-rotating carousel
+        console.log('📺 Auto-rotating carousel - no user interactions enabled');
     }
 
     async openMedia(item) {
-        console.log(`🎬 Attempting to open media: ${item.name} at ${item.path}`);
-        
-        try {
-            // Check if we're in Electron environment
-            if (typeof require !== 'undefined') {
-                const { shell } = require('electron');
-                console.log('📱 Using Electron shell to open media...');
-                
-                // Use shell.openPath for opening files with default application
-                const result = await shell.openPath(item.path);
-                if (result === '') {
-                    // Empty string means success in Electron shell.openPath
-                    console.log(`✅ Successfully opened: ${item.name}`);
-                } else {
-                    console.log(`⚠️ Shell returned message: ${result}`);
-                    // Try alternative method - show in folder
-                    console.log('🔄 Trying to show in folder instead...');
-                    shell.showItemInFolder(item.path);
-                    console.log(`📁 Showed ${item.name} in folder`);
-                }
-            } else {
-                console.log('🌐 Not in Electron environment');
-                throw new Error('Not in Electron environment');
-            }
-        } catch (error) {
-            console.error('❌ Failed to open media with shell:', error);
-            
-            // Try using IPC to ask main process to open the file
-            try {
-                console.log('🔄 Trying IPC method...');
-                const { ipcRenderer } = require('electron');
-                await ipcRenderer.invoke('open-media-file', item.path);
-                console.log(`✅ IPC method successful for: ${item.name}`);
-            } catch (ipcError) {
-                console.error('❌ IPC method also failed:', ipcError);
-                
-                // Final fallback - show error to user
-                const errorMsg = `Could not open ${item.name}. File path: ${item.path}`;
-                console.error(errorMsg);
-                
-                // Try to show in folder as last resort
-                try {
-                    const { shell } = require('electron');
-                    shell.showItemInFolder(item.path);
-                    console.log(`📁 Fallback: Showed ${item.name} in folder`);
-                } catch (folderError) {
-                    console.error('❌ Even folder view failed:', folderError);
-                }
-            }
-        }
-    }
-
-    setupMouseEventManagement() {
-        // Implementation of setupMouseEventManagement method
+        // Removed - no click functionality
     }
 }
 

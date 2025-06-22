@@ -15,7 +15,8 @@ class ViewManager {
             console.log('View manager initialized');
         }, 2000);
     }
-      setupInitialState() {
+      
+    setupInitialState() {
         // Start with full view
         this.showFullView();
         
