@@ -1,6 +1,9 @@
 # Core AI and API packages
 google-genai
 python-dotenv
+elevenlabs
+pygame
+requests
 
 # OBS WebSocket integration
 obsws-python

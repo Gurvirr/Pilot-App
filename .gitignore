@@ -1,8 +1,17 @@
 # Dependencies
-/node_modules
+node_modules/
 .env
 *.env
 insanely-fast-whisper
+
+# Python virtual environment
+backend/venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
 *venv
 /backend/model/
 /backend/venv/
