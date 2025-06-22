@@ -291,13 +291,47 @@ class MediaCarousel {
             
             contentContainer.appendChild(img);
         } else {
-            // For videos, show video icon and info
-            contentContainer.innerHTML = `
-                <div style="font-size: 48px; color: #00aaff; text-align: center; opacity: 0.95;">
-                    🎥<br>
-                    <span style="font-size: 14px; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;">Video Preview</span>
-                </div>
+            // For videos, show actual video preview
+            const video = document.createElement('video');
+            video.src = `file://${currentItem.path}`;
+            video.style.cssText = `
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                display: block;
+                opacity: 0.95;
+                border-radius: 4px;
             `;
+            
+            // Video properties
+            video.muted = true; // Mute to avoid audio
+            video.loop = false;
+            video.preload = 'metadata';
+            
+            // Store reference for timer-based preview
+            video.setAttribute('data-duration', '0');
+            
+            video.onloadedmetadata = () => {
+                console.log(`✅ Loaded video metadata: ${currentItem.name}`);
+                video.setAttribute('data-duration', video.duration);
+                
+                // Start the video preview progression
+                this.startVideoPreview(video);
+            };
+            
+            video.onerror = () => {
+                console.log(`❌ Failed to load video: ${currentItem.name}`);
+                // Fallback to icon if video fails to load
+                contentContainer.innerHTML = '';
+                contentContainer.innerHTML = `
+                    <div style="font-size: 48px; color: #00aaff; text-align: center; opacity: 0.95;">
+                        🎥<br>
+                        <span style="font-size: 14px; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;">Video Preview</span>
+                    </div>
+                `;
+            };
+            
+            contentContainer.appendChild(video);
         }
 
         // Assemble item
@@ -330,7 +364,58 @@ class MediaCarousel {
         }, this.rotationSpeed);
     }
 
+    startVideoPreview(videoElement) {
+        const duration = parseFloat(videoElement.getAttribute('data-duration'));
+        if (duration <= 0) return;
+        
+        // Calculate how much of the video to show during the slide duration
+        const previewDuration = Math.min(duration, this.rotationSpeed / 1000); // Max preview duration in seconds
+        const segments = 8; // Number of segments to show from the video
+        const segmentDuration = previewDuration / segments;
+        
+        let currentSegment = 0;
+        
+        // Start with the first segment
+        videoElement.currentTime = 0;
+        
+        // Create interval to progress through video segments
+        const videoProgressInterval = setInterval(() => {
+            if (currentSegment >= segments) {
+                clearInterval(videoProgressInterval);
+                return;
+            }
+            
+            // Calculate time position in the video (spread across the video duration)
+            const timePosition = (currentSegment / segments) * duration;
+            videoElement.currentTime = timePosition;
+            
+            currentSegment++;
+        }, this.rotationSpeed / segments); // Progress through segments during the slide duration
+        
+        // Store interval reference for cleanup
+        videoElement.setAttribute('data-progress-interval', videoProgressInterval);
+        
+        console.log(`🎬 Started video preview for ${duration}s video with ${segments} segments`);
+    }
+
+    // Clean up video intervals when switching slides
+    cleanupVideoPreview() {
+        const displayArea = document.getElementById('main-display');
+        if (displayArea) {
+            const video = displayArea.querySelector('video');
+            if (video) {
+                const intervalId = video.getAttribute('data-progress-interval');
+                if (intervalId) {
+                    clearInterval(parseInt(intervalId));
+                }
+            }
+        }
+    }
+
     nextSlide() {
+        // Clean up current video preview
+        this.cleanupVideoPreview();
+        
         this.currentIndex = (this.currentIndex + 1) % this.mediaItems.length;
         this.renderCarousel();
         this.animateProgressBar();
@@ -383,12 +468,16 @@ class MediaCarousel {
             this.autoRotateInterval = null;
             console.log('⏹️ Auto-rotation stopped');
         }
+        
+        // Clean up any video previews
+        this.cleanupVideoPreview();
     }
 
     // Cleanup method
     destroy() {
         this.stopAutoRotation();
         this.stopAutoRefresh();
+        this.cleanupVideoPreview(); // Ensure video previews are cleaned up
         console.log('🗑️ Media carousel destroyed');
     }
 
