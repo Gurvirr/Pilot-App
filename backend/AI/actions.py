@@ -19,6 +19,10 @@ def action_list():
         "play_music",
         "open_app",
         "close_app",
+        "media_play",
+        "media_pause",
+        "media_next",
+        "media_previous",
         "send_discord",
         "afk",
         "quit_game"
@@ -261,3 +265,26 @@ def close_app(app_name):
     except Exception as e:
         print(f"❌ An unexpected error occurred while trying to close '{app_name}': {e}")
         return f"An unexpected error occurred while trying to close {app_name}."
+
+def media_play():
+    """Presses the play/pause media key to play media."""
+    pyautogui.press("playpause")
+    return "Playing music."
+
+def media_pause():
+    """Presses the play/pause media key to pause media."""
+    pyautogui.press("playpause")
+    return "Pausing music."
+
+def media_next():
+    """Presses the next track media key."""
+    pyautogui.press("nexttrack")
+    return "Skipping to the next song."
+
+def media_previous():
+    """Presses the previous track media key."""
+    pyautogui.press("prevtrack")
+    return "Going back to the previous song."
+
+if __name__ == "__main__":
+    print("TESTING!")

@@ -11,6 +11,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 import json
 import ast
+import threading
 from tts_client import speak
 
 
@@ -102,6 +103,11 @@ def extract_response(user_prompt):
         Available actions you can perform: {actions_str}
 
         Sometimes, the AI voice recognition doesn't do a great job, so you need to look at what you can do and match it with the available actions.
+        Here are some examples of how to map user requests to intents:
+        - If the user says "stop the song", "pause the track", or even a misspelled "pauste", the intent is `media_pause`.
+        - If the user says "next song" or "skip this", the intent is `media_next`.
+        - If the user says "turn on spotify" or "launch spotify", the intent is `open_app` with `app_name: "spotify"`.
+        - If the user says "kill chrome", the intent is `close_app` with `app_name: "chrome"`.
 
         The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
         
@@ -120,18 +126,28 @@ def execute_action(intent, context):
         return "Clipping the last 30 seconds for you."
     elif intent == "screenshot":
         actions.screenshot()
-        return "Screenshot saved."
+        # No verbal feedback needed for success, the "taking screenshot" is enough.
+        return None
     # elif intent == "play_music":
     #     playsound("sick_track.mp3")  # Add your music path
     elif intent == "open_app":
         return actions.open_app(context["app_name"])
     elif intent == "close_app":
         return actions.close_app(context["app_name"])
+    elif intent == "media_play":
+        return actions.media_play()
+    elif intent == "media_pause":
+        return actions.media_pause()
+    elif intent == "media_next":
+        return actions.media_next()
+    elif intent == "media_previous":
+        return actions.media_previous()
     # elif intent == "quit_game":
         # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
     elif intent == "afk":
         print("[Mock] Simulating AFK behavior in Valorant...")
-        return "Going AFK."
+        # No verbal feedback needed for success
+        return None
     else:
         print("Unknown or unsupported command.")
         return "Sorry, I don't know how to do that."
@@ -148,8 +164,12 @@ if __name__ == "__main__":
         user_input = input("You: ")
         response = extract_response(user_input)
         print(f"Response: {response}")
-        feedback = execute_action(response.get("intent"), response)
-        print(f"Feedback: {feedback}")
+
+        if isinstance(response, dict):
+            feedback = execute_action(response.get("intent"), response)
+            print(f"Action feedback: {feedback}")
+        else:
+            print(f"Could not execute action. Response was not a valid action dictionary.")
 
 
 
@@ -157,13 +177,24 @@ def jarvis_do(prompt):
     print(f"Jarvis: {prompt}")
     response = extract_response(prompt)
     
-    # Speak the description of what Jarvis is about to do
-    if response and response.get("description"):
-        speak(response["description"])
+    # Check if the AI could figure out what to do.
+    if not isinstance(response, dict):
+        print(f"Jarvis could not parse the command: {response}")
+        speak("Sorry, I had trouble understanding that request.")
+        return
+
+    # Start the announcement in a background thread so it doesn't block the action.
+    if response.get("description"):
+        speak_thread = threading.Thread(target=speak, args=(response["description"],))
+        speak_thread.start()
     
-    # Execute the action and get the result feedback
+    # Execute the action immediately, while the announcement may be playing.
     feedback = execute_action(response.get("intent"), response)
 
-    # Speak the feedback from the action's execution
+    # If there's important feedback (an error), start it in another background thread.
     if feedback:
-        speak(feedback)
+        problem_keywords = ["sorry", "couldn't", "wasn't", "error", "failed", "unexpected"]
+        # Check if the feedback is a "problem" that the user needs to hear about.
+        if any(keyword in feedback.lower() for keyword in problem_keywords):
+            feedback_thread = threading.Thread(target=speak, args=(feedback,))
+            feedback_thread.start()
