@@ -1,6 +1,12 @@
 // WebSocket client for Jarvis events
 class JarvisWebSocket {
     constructor(url = 'http://localhost:5000') {
+        // Singleton pattern - prevent multiple instances
+        if (JarvisWebSocket.instance) {
+            console.log('⚠️ JarvisWebSocket instance already exists, returning existing instance');
+            return JarvisWebSocket.instance;
+        }
+        
         this.url = url;
         this.socket = null;
         this.isConnected = false;
@@ -18,6 +24,9 @@ class JarvisWebSocket {
             centerVisualizer: document.querySelector('.center-visualizer'),
             cornerBoxes: document.querySelectorAll('.corner-box')
         };
+        
+        // Store instance
+        JarvisWebSocket.instance = this;
         
         this.connect();
     }
@@ -50,7 +59,11 @@ class JarvisWebSocket {
     
     initializeConnection() {
         this.socket = io(this.url);
-          this.socket.on('connect', () => {
+        
+        // Expose socket globally to prevent duplicate connections
+        window.socket = this.socket;
+        
+        this.socket.on('connect', () => {
             console.log('Connected to Jarvis WebSocket');
             this.isConnected = true;
             this.retryCount = 0;
@@ -303,6 +316,12 @@ document.head.insertAdjacentHTML('beforeend', stateStyles);
 let jarvisWS = null;
 
 window.addEventListener('DOMContentLoaded', () => {
+    // Prevent multiple instances
+    if (jarvisWS) {
+        console.log('⚠️ WebSocket already initialized, skipping...');
+        return;
+    }
+    
     // Wait a bit for other scripts to load, especially message logger
     setTimeout(() => {
         jarvisWS = new JarvisWebSocket();
