@@ -14,8 +14,16 @@ body.mini-view .overlay-container {
     display: none;
 }
 
+body.mini-view .center-visualizer {
+    display: block; /* Ensure it's visible in mini view */
+}
+
 body.full-view .mini-overlay {
     display: none !important;
+}
+
+body.full-view .center-visualizer {
+    display: block; /* Ensure it's visible in full view */
 }
 
 .overlay-container {
@@ -40,26 +48,52 @@ body.full-view .mini-overlay {
     pointer-events: none; /* Allow clicks to pass through */
 }
 
+/* Add header styling for top-left box to match Jarvis messages */
+.corner-box.top-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: rgba(0, 170, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.3);
+    border-radius: 4px 4px 0 0;
+    z-index: 1;
+}
+
+.corner-box.top-left::after {
+    content: '📊 System Monitor';
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    color: #00aaff;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 2;
+}
+
 .center-visualizer {
     position: absolute;
-    top: 20px; /* Moved to top */
-    right: 440px; /* Positioned to the left of the top-right corner box */
-    transform: none; /* Remove centering transform */
-    width: 200px; /* Made smaller */
-    height: 200px; /* Made smaller */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
     background-color: transparent;
     border: none;
     padding: 0;
     box-sizing: border-box;
     -webkit-app-region: no-drag;
     pointer-events: none; /* Allow clicks to pass through */
-    transition: width 0.3s ease-in-out, height 0.3s ease-in-out; /* Faster transition */
 }
 
 .center-visualizer.focused {
-    width: 150px; /* Even smaller when focused */
-    height: 150px;
-    transition: width 0.3s ease-in-out, height 0.3s ease-in-out; /* Faster transition */
+    width: 300px;
+    height: 300px;
+    top: 20px;
+    transform: translate(-50%, 0);
 }
 
 /* Iron Man Hologram Styles */
@@ -93,6 +127,7 @@ canvas {
 .top-left {
     top: 20px;
     left: 20px;
+    padding-top: 30px; /* Make space for the header */
 }
 
 .top-right {

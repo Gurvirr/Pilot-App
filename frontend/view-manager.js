@@ -1,7 +1,7 @@
 // View Manager for handling overlay states
 class ViewManager {
     constructor() {
-        this.currentView = 'mini'; // 'mini' or 'full'
+        this.currentView = 'full'; // Start in full view by default
         this.isInitialized = false;
         
         this.init();
@@ -16,13 +16,13 @@ class ViewManager {
         }, 2000);
     }
       setupInitialState() {
-        // Start with mini view
-        this.showMiniView();
+        // Start with full view
+        this.showFullView();
         
         // Add initial class to body
-        document.body.classList.add('mini-view');
+        document.body.classList.add('full-view');
         
-        console.log('Initial state: mini view active');
+        console.log('Initial state: full view active');
     }
     
     toggle() {
@@ -70,6 +70,9 @@ class ViewManager {
         // Update body class for styling
         document.body.classList.remove('mini-view');
         document.body.classList.add('full-view');
+
+        // Dispatch a resize event to ensure all canvases redraw correctly
+        window.dispatchEvent(new Event('resize'));
     }
     
     hideFullView() {
