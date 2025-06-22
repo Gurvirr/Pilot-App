@@ -11,6 +11,8 @@ from google import genai
 from pydantic import BaseModel
 from typing import Literal, Optional
 import cv2
+import macros
+import json
 
 import clip 
 
@@ -32,6 +34,11 @@ def action_list():
         "media_previous",
         "send_discord",
         "afk",
+        "type_chat",
+        "spam_chat",
+        "type_csgo_chat",
+        "type_ai_message",
+        "list_steam_games",
         "quit_game",
         "take_picture"
     ]
@@ -130,10 +137,111 @@ def _find_and_launch_shortcut(app_name):
                             print(f"⚠️ Found shortcut for {app_name} but failed to launch: {e}")
     return False
 
+def _find_steam_games():
+    """Find installed Steam games by reading Steam's library files."""
+    steam_games = {}
+    
+    # Common Steam installation paths
+    steam_paths = [
+        os.path.join(os.getenv('PROGRAMFILES(X86)', ''), 'Steam'),
+        os.path.join(os.getenv('PROGRAMFILES', ''), 'Steam'),
+        os.path.join(os.path.expanduser('~'), 'Steam')
+    ]
+    
+    for steam_path in steam_paths:
+        if not os.path.exists(steam_path):
+            continue
+            
+        # Look for libraryfolders.vdf file
+        library_folders_path = os.path.join(steam_path, 'steamapps', 'libraryfolders.vdf')
+        if os.path.exists(library_folders_path):
+            try:
+                with open(library_folders_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    
+                # Parse library folders
+                library_paths = []
+                for line in content.split('\n'):
+                    if '"path"' in line:
+                        path_match = re.search(r'"path"\s+"([^"]+)"', line)
+                        if path_match:
+                            library_paths.append(path_match.group(1))
+                
+                # Search each library for games
+                for library_path in library_paths:
+                    steamapps_path = os.path.join(library_path, 'steamapps')
+                    if os.path.exists(steamapps_path):
+                        for file in os.listdir(steamapps_path):
+                            if file.endswith('.acf'):
+                                try:
+                                    with open(os.path.join(steamapps_path, file), 'r', encoding='utf-8') as f:
+                                        acf_content = f.read()
+                                    
+                                    # Extract game name and app ID
+                                    name_match = re.search(r'"name"\s+"([^"]+)"', acf_content)
+                                    appid_match = re.search(r'"appid"\s+"(\d+)"', acf_content)
+                                    
+                                    if name_match and appid_match:
+                                        game_name = name_match.group(1)
+                                        app_id = appid_match.group(1)
+                                        steam_games[game_name.lower()] = {
+                                            'name': game_name,
+                                            'appid': app_id,
+                                            'path': library_path
+                                        }
+                                except Exception as e:
+                                    print(f"Error reading ACF file {file}: {e}")
+                                    
+            except Exception as e:
+                print(f"Error reading libraryfolders.vdf: {e}")
+    
+    return steam_games
+
+def _launch_steam_game(game_name: str):
+    """Launch a Steam game using steam:// protocol."""
+    steam_games = _find_steam_games()
+    
+    # Try exact match first
+    if game_name.lower() in steam_games:
+        app_id = steam_games[game_name.lower()]['appid']
+        game_display_name = steam_games[game_name.lower()]['name']
+        
+        # Launch via steam:// protocol
+        steam_url = f"steam://rungameid/{app_id}"
+        try:
+            webbrowser.open(steam_url)
+            print(f"✅ Launched Steam game: {game_display_name} (ID: {app_id})")
+            return f"Launched {game_display_name} on Steam."
+        except Exception as e:
+            print(f"❌ Failed to launch Steam game: {e}")
+            return f"Failed to launch {game_display_name}."
+    
+    # Try partial matches
+    for game_key, game_info in steam_games.items():
+        if game_name.lower() in game_key or game_name.lower() in game_info['name'].lower():
+            app_id = game_info['appid']
+            game_display_name = game_info['name']
+            
+            steam_url = f"steam://rungameid/{app_id}"
+            try:
+                webbrowser.open(steam_url)
+                print(f"✅ Launched Steam game: {game_display_name} (ID: {app_id})")
+                return f"Launched {game_display_name} on Steam."
+            except Exception as e:
+                print(f"❌ Failed to launch Steam game: {e}")
+                return f"Failed to launch {game_display_name}."
+    
+    return f"Could not find Steam game: {game_name}"
+
 def open_app(app_name):
     """Open an application by its name using a multi-pronged, more generic approach."""
     print(f"Attempting to open application: '{app_name}'")
     app_lower = app_name.lower()
+
+    # First, check if it's a Steam game
+    steam_result = _launch_steam_game(app_name)
+    if "Launched" in steam_result or "Could not find Steam game" not in steam_result:
+        return steam_result
 
     # Method 1: URI Schemes (a concession to reliability for a few tricky apps)
     uri_schemes = {
@@ -145,7 +253,7 @@ def open_app(app_name):
         try:
             webbrowser.open(uri_schemes[app_lower])
             print(f"✅ Opened {app_name} via {uri_schemes[app_lower]} protocol")
-            return
+            return f"Opened {app_name}."
         except Exception as e:
             print(f"⚠️ {app_name} protocol failed: {e}")
 
@@ -168,14 +276,13 @@ def open_app(app_name):
         try:
             subprocess.Popen(system_apps[app_lower], shell=True)
             print(f"✅ Launched system tool '{app_name}' via command '{system_apps[app_lower]}'.")
-            return
+            return 
         except Exception as e:
             print(f"⚠️ Failed to launch system tool '{app_name}': {e}")
 
-
     # Method 3: Search for shortcuts (finds most user-installed GUI apps)
     if _find_and_launch_shortcut(app_name):
-        return
+        return 
 
     # Method 4: If the app name has spaces, try a sanitized version (e.g., "snipping tool" -> "snippingtool")
     if ' ' in app_name:
@@ -184,19 +291,18 @@ def open_app(app_name):
             # Use Popen directly for this, as 'start' can be unpredictable with sanitized names
             subprocess.Popen(sanitized_name, shell=True)
             print(f"✅ Launched '{app_name}' by sanitizing its name to '{sanitized_name}'.")
-            return
+            return 
         except FileNotFoundError:
             print(f"ℹ️ Sanitized name '{sanitized_name}' not found. Continuing...")
         except Exception as e:
             print(f"⚠️ Attempt with sanitized name '{sanitized_name}' failed: {e}")
-
 
     # Method 5: Use the 'start' command (for anything in PATH or registered with the OS)
     try:
         subprocess.Popen(f'start "" "{app_name}"', shell=True)
         print(f"✅ Attempted to open '{app_name}' via the 'start' command. This is often successful for registered apps or items in PATH.")
         # This command doesn't block or easily confirm success, so we assume it works if no error is thrown.
-        return
+        return 
     except Exception as e:
         print(f"ℹ️ The 'start' command failed for '{app_name}': {e}. Trying final methods.")
 
@@ -209,7 +315,7 @@ def open_app(app_name):
             try:
                 subprocess.Popen(f'start "" "{app.name}"', shell=True)
                 print(f"✅ Attempting to launch registered app '{app.name}' via 'start'.")
-                return
+                return 
             except Exception as e:
                 print(f"ℹ️ 'start' command failed for winapps result '{app.name}': {e}. Trying to parse executable from uninstall string.")
 
@@ -221,7 +327,7 @@ def open_app(app_name):
                         try:
                             subprocess.Popen(f'"{match}"', shell=True)
                             print(f"✅ Opened {app.name} via uninstall string parse: {match}")
-                            return
+                            return 
                         except Exception as e:
                             print(f"⚠️ Failed to launch {match} from uninstall string: {e}")
     except Exception as e:
@@ -325,6 +431,62 @@ def media_previous():
     """Presses the previous track media key."""
     pyautogui.press("prevtrack")
     return
+
+def afk(duration_minutes: int = 30, movement_interval: int = 30):
+    """Start AFK macro to prevent being kicked from games."""
+    macros.afk(duration_minutes, movement_interval)
+    return 
+
+def stop_afk():
+    """Stop AFK macro."""
+    macros.stop_afk()
+    return 
+
+def type_chat(message: str, delay: float = 0.05):
+    """Type a message in game chat."""
+    macros.type_chat(message, delay)
+    return 
+
+def spam_chat(message: str, count: int = 5, interval: float = 1.0):
+    """Spam a message multiple times in chat."""
+    macros.spam_chat(message, count, interval)
+    return 
+
+def add_chat_message(message: str):
+    """Add a custom message to the chat message pool."""
+    macros.add_chat_message(message)
+    return 
+
+def type_csgo_chat(message: str, delay: float = 0.05, team_chat: bool = True):
+    """Type a message in CSGO chat (defaults to team chat with U key)."""
+    macros.type_csgo_chat(message, delay, team_chat)
+    return 
+
+def type_ai_message(context: str = "general", delay: float = 0.05, team_chat: bool = True):
+    """Generate and type an AI message."""
+    message = macros.type_ai_message(context, delay, team_chat)
+    return 
+
+def list_steam_games():
+    """List all installed Steam games."""
+    steam_games = _find_steam_games()
+    
+    if not steam_games:
+        return "No Steam games found. Make sure Steam is installed and you have games in your library."
+    
+    game_list = []
+    for game_info in steam_games.values():
+        game_list.append(game_info['name'])
+    
+    # Sort alphabetically
+    game_list.sort()
+    
+    result = f"Found {len(game_list)} Steam games:\n"
+    for i, game in enumerate(game_list, 1):
+        result += f"{i}. {game}\n"
+    
+    print(result)
+    return result
 
 if __name__ == "__main__":
     print("TESTING!")
