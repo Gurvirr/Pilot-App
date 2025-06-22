@@ -75,18 +75,7 @@ body.full-view .center-visualizer {
 }
 
 .center-visualizer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 800px;
-    height: 800px;
-    background-color: transparent;
-    border: none;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-app-region: no-drag;
-    pointer-events: none; /* Allow clicks to pass through */
+    display: none; /* Hide the center visualizer completely */
 }
 
 .center-visualizer.focused {
@@ -166,4 +155,129 @@ canvas {
     transform: translateX(-50%);
     bottom: auto;
     right: auto;
+}
+
+/* Advanced Mic Overlay Styling */
+.corner-box.top-right {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 100, 200, 0.05));
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+    position: relative;
+}
+
+.corner-box.top-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #00d4ff, #ff6b35);
+    animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.mic-overlay-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#mic-circle-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.mic-status-indicator {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    background: radial-gradient(circle, rgba(0, 212, 255, 0.2), transparent);
+    border-radius: 50%;
+    border: 2px solid rgba(0, 212, 255, 0.4);
+    transition: all 0.3s ease;
+}
+
+.mic-status-indicator.active {
+    border-color: rgba(255, 64, 129, 0.6);
+    background: radial-gradient(circle, rgba(255, 64, 129, 0.3), transparent);
+    box-shadow: 0 0 30px rgba(255, 64, 129, 0.4);
+    transform: scale(1.1);
+}
+
+.mic-status-indicator.processing {
+    border-color: rgba(76, 175, 80, 0.6);
+    background: radial-gradient(circle, rgba(76, 175, 80, 0.3), transparent);
+    box-shadow: 0 0 30px rgba(76, 175, 80, 0.4);
+}
+
+.mic-icon {
+    font-size: 24px;
+    animation: float-icon 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.8));
+}
+
+@keyframes float-icon {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    25% { transform: translateY(-3px) rotate(2deg); }
+    50% { transform: translateY(0px) rotate(0deg); }
+    75% { transform: translateY(-2px) rotate(-1deg); }
+}
+
+.audio-level-ring {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    background: conic-gradient(from 0deg, 
+        rgba(0, 212, 255, 0.8) 0deg,
+        rgba(0, 212, 255, 0.4) 90deg,
+        rgba(0, 212, 255, 0.1) 180deg,
+        rgba(0, 212, 255, 0.4) 270deg,
+        rgba(0, 212, 255, 0.8) 360deg);
+    mask: radial-gradient(circle, transparent 65%, black 70%);
+    animation: rotate-ring 4s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.audio-level-ring.visible {
+    opacity: 1;
+}
+
+@keyframes rotate-ring {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .mic-status-indicator {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .mic-icon {
+        font-size: 20px;
+    }
 }
