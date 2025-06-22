@@ -10,6 +10,7 @@ import webbrowser
 from google import genai
 from pydantic import BaseModel
 from typing import Literal, Optional
+import cv2
 
 import clip 
 
@@ -31,7 +32,8 @@ def action_list():
         "media_previous",
         "send_discord",
         "afk",
-        "quit_game"
+        "quit_game",
+        "take_picture"
     ]
 
 def screenshot():
@@ -58,7 +60,39 @@ def screenshot():
     print(f"Screenshot saved to {screenshot_path}")
     
 
+def take_picture():
+    """Takes a picture using the default webcam."""
+    # Initialize the camera
+    cap = cv2.VideoCapture(0) # 0 is the default camera
 
+    if not cap.isOpened():
+        print("❌ Cannot open camera")
+        return "Sorry, I couldn't access the camera."
+
+    # Allow the camera to warm up and adjust exposure
+    # We read a few frames to give the sensor time to adjust
+    for _ in range(30):
+        cap.read()
+
+    # Capture a single frame
+    ret, frame = cap.read()
+
+    if not ret:
+        print("❌ Can't receive frame (stream end?). Exiting ...")
+        cap.release()
+        return "Sorry, I failed to capture a picture."
+
+    # Generate filename
+    now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    picture_name = f"picture_{now}.png"
+    picture_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Screenshots", picture_name)
+
+    # Save the captured frame
+    cv2.imwrite(picture_path, frame)
+    print(f"✅ Picture saved to {picture_path}")
+
+    # Release the camera
+    cap.release()
 
 def _find_and_launch_shortcut(app_name):
     """Finds and launches a shortcut (.lnk) in common locations on Windows."""

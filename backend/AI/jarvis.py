@@ -102,6 +102,7 @@ def extract_response(user_prompt):
         - For generic media commands: Use `media_play` for "resume" or "unpause". Use `media_pause` for "stop the song" or "pause". Use `media_next` for "next song" or "skip".
         - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
         - For screenshots: Use the `screenshot` intent.
+        - For taking a picture: Use the `take_picture` intent if the user wants to use their camera.
 
         The SST doesn't work that well so make sure the app you plan to run is an actual app, not something like "modify" because thats actually spotify.
         The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
@@ -136,8 +137,8 @@ def execute_action(intent, context):
         return actions.media_next()
     elif intent == "media_previous":
         return actions.media_previous()
-    # elif intent == "quit_game":
-        # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
+    elif intent == "take_picture":
+        return actions.take_picture()
     elif intent == "afk":
         print("[Mock] Simulating AFK behavior in Valorant...")
         return
