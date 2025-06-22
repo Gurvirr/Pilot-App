@@ -4,3 +4,5 @@
 *.env
 insanely-fast-whisper
 *venv
+/backend/model/
+/backend/venv/
