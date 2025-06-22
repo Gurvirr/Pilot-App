@@ -5,6 +5,7 @@ elevenlabs
 pygame
 requests
 flask
+flask-socketio
 
 # OBS WebSocket integration
 obsws-python
@@ -12,6 +13,7 @@ obsws-python
 # GUI automation and screen capture
 pyautogui
 pyscreeze
+Pillow
 
 # Windows-specific packages
 pywin32
@@ -19,3 +21,5 @@ winapps
 
 vosk
 sounddevice
+numpy
+opencv-python

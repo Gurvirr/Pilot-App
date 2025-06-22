@@ -22,19 +22,23 @@
             <canvas id="canvas-br"></canvas>
         </div>
         
-        <!-- Restore Center Audio Visualizer -->
-        <div class="center-visualizer">
-            <canvas id="canvas-center"></canvas>
-        </div>
-        
         <!-- Iron Man Hologram Container -->
         <div class="hologram-container">
             <div id="hologram-canvas"></div>
         </div>
     </div>
     
+    <!-- Center Audio Visualizer is now outside the main container to persist between views -->
+    <div class="center-visualizer">
+        <canvas id="canvas-center"></canvas>
+    </div>
+
     <script src="animations.js"></script>
     <script src="hologram.js"></script>
     <script src="system-info.js"></script>
+    <script src="mini-overlay.js"></script>
+    <script src="view-manager.js"></script>
+    <script src="message-logger.js"></script>
+    <script src="websocket-client.js"></script>
 </body>
-</html> 
+</html>

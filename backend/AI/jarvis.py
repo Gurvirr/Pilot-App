@@ -119,9 +119,16 @@ def extract_response(user_prompt, multiple_actions=False):
 
             Available actions you can perform: {actions_str}
 
-        Sometimes, the AI voice recognition doesn't do a great job, so you need to look at what you can do and match it with the available actions.
+        You must map the user's request to one of the available intents. Here are rules to follow:
+        - For generic media commands: Use `media_play` for "resume" or "unpause". Use `media_pause` for "stop the song" or "pause". Use `media_next` for "next song" or "skip".
+        - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
+        - For screenshots: Use the `screenshot` intent.
+        - For taking a picture: Use the `take_picture` intent if the user wants to use their camera.
 
+        The SST doesn't work that well so make sure the app you plan to run is an actual app, not something like "modify" because thats actually spotify.
         The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
+        
+        The description is what you will say to the user. Keep it short.
         
         User said: '{user_prompt}'. 
         User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags.
@@ -135,19 +142,27 @@ def extract_response(user_prompt, multiple_actions=False):
 def execute_action(intent, context):
     if intent == "clip":
         actions.clip_screen()
-        return "Clipping the last 30 seconds for you."
+        return
     elif intent == "screenshot":
         actions.screenshot()
-        return "Screenshot saved."
+        return
     elif intent == "open_app":
         return actions.open_app(context["app_name"])
     elif intent == "close_app":
         return actions.close_app(context["app_name"])
-    # elif intent == "quit_game":
-        # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
+    elif intent == "media_play":
+        return actions.media_play()
+    elif intent == "media_pause":
+        return actions.media_pause()
+    elif intent == "media_next":
+        return actions.media_next()
+    elif intent == "media_previous":
+        return actions.media_previous()
+    elif intent == "take_picture":
+        return actions.take_picture()
     elif intent == "afk":
         print("[Mock] Simulating AFK behavior in Valorant...")
-        return "Going AFK."
+        return
     else:
         print("Unknown or unsupported command.")
         return "Sorry, I don't know how to do that."
@@ -192,10 +207,52 @@ if __name__ == "__main__":
 
 def jarvis_do(prompt, multiple_actions=True): 
     print(f"Jarvis: {prompt}")
-    response = extract_response(prompt, multiple_actions=multiple_actions)
+    
+    # Import socketio here to avoid circular imports
+    try:
+        from server import socketio
+        import time
+    except ImportError:
+        socketio = None
+        import time
+    
+    response = extract_response(prompt)
+    
+    # Send jarvis response to WebSocket
+    if socketio and response and response.get("description"):
+        socketio.emit('jarvis_event', {
+            'type': 'jarvis_response',
+            'text': response["description"],
+            'timestamp': time.time(),
+            'source': 'jarvis',
+            'intent': response.get("intent", "unknown")
+        })
     
     # Speak the description of what Jarvis is about to do
     if response and response.get("description"):
         speak(response["description"])
     
-    execute_action(response.get("intent"), response)
+    # Send action start event
+    if socketio and response:
+        socketio.emit('jarvis_event', {
+            'type': 'action_start',
+            'text': f"Executing: {response.get('intent', 'unknown')}",
+            'timestamp': time.time(),
+            'intent': response.get("intent", "unknown")
+        })
+    
+    # Execute the action and get the result feedback
+    feedback = execute_action(response.get("intent"), response)
+
+    # Send action result to WebSocket
+    if socketio and feedback:
+        socketio.emit('jarvis_event', {
+            'type': 'action_result',
+            'text': feedback,
+            'timestamp': time.time(),
+            'source': 'system'
+        })
+
+    # Speak the feedback from the action's execution
+    if feedback:
+        speak(feedback)

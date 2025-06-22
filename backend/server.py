@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_socketio import SocketIO, emit
 import threading
 import time
 from speech_to_text import speech_to_text_loop
@@ -9,6 +10,8 @@ from dotenv import load_dotenv
 from google import genai
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'jarvis_secret_key'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global variables to track the STT loop
 stt_thread = None
@@ -38,12 +41,33 @@ def stt_worker():
             if recognized_text:
                 print(f"Recognized: {recognized_text}")
                 
+                # Check if this contains the trigger word "jarvis"
+                if "jarvis" in recognized_text.lower():
+                    # Send "active" event when jarvis is triggered
+                    socketio.emit('jarvis_event', {'type': 'active'})
+                
+                # Send "message" event for all recognized text
+                socketio.emit('jarvis_event', {'type': 'message', 'text': recognized_text})
+                
                 # Feed the text into jarvis_do
                 jarvis_do(recognized_text)
+                
+                # Send "hidden" event when action is complete
+                socketio.emit('jarvis_event', {'type': 'hidden'})
                 
         except Exception as e:
             print(f"Error in STT worker: {e}")
             time.sleep(1)  # Brief pause before retrying
+
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected to WebSocket')
+    emit('jarvis_event', {'type': 'connected', 'message': 'Connected to Jarvis WebSocket'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected from WebSocket')
 
 
 @app.route('/')
@@ -106,13 +130,14 @@ def test_jarvis():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    print("Starting Jarvis Flask Server...")
+    print("Starting Jarvis Flask Server with WebSocket...")
     print("Available endpoints:")
     print("  GET  /          - Home page with status")
     print("  POST /start_stt - Start speech-to-text loop")
     print("  POST /stop_stt  - Stop speech-to-text loop")
     print("  GET  /status    - Check STT status")
     print("  POST /test_jarvis - Test jarvis_do with manual text")
+    print("  WebSocket events: 'active', 'message', 'hidden'")
     
     # Auto-start STT on server startup (only if not already running)
     if not stt_running:
@@ -125,4 +150,4 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Failed to auto-start STT: {e}")
     
-    app.run(debug=False, host='0.0.0.0', port=5000)  # Disabled debug to prevent restarts
+    socketio.run(app, debug=False, host='0.0.0.0', port=5000)  # Use socketio.run instead of app.run
