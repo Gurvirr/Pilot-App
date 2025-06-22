@@ -22,7 +22,10 @@ def clip_screen():
     clip.save_clip()
 import cv2
 
-import clip 
+import clip
+
+# Disable pyautogui failsafe for media keys
+pyautogui.FAILSAFE = False
 
 def clip_screen():
     print("Saving clip") 
@@ -325,6 +328,7 @@ def open_app(app_name):
         "control panel": "control.exe",
     }
     if app_lower in system_apps:
+        
         try:
             subprocess.Popen(system_apps[app_lower], shell=True)
             print(f"✅ Launched system tool '{app_name}' via command '{system_apps[app_lower]}'.")
@@ -467,23 +471,35 @@ def close_app(app_name):
 
 def media_play():
     """Presses the play/pause media key to play media."""
-    pyautogui.press("playpause")
-    return
+    try:
+        pyautogui.press("playpause")
+        return "Media resumed"
+    except Exception as e:
+        return f"Failed to play media: {e}"
 
 def media_pause():
     """Presses the play/pause media key to pause media."""
-    pyautogui.press("playpause")
-    return
+    try:
+        pyautogui.press("playpause")
+        return "Media paused"
+    except Exception as e:
+        return f"Failed to pause media: {e}"
 
 def media_next():
     """Presses the next track media key."""
-    pyautogui.press("nexttrack")
-    return
+    try:
+        pyautogui.press("nexttrack")
+        return "Skipped to next track"
+    except Exception as e:
+        return f"Failed to skip track: {e}"
 
 def media_previous():
     """Presses the previous track media key."""
-    pyautogui.press("prevtrack")
-    return
+    try:
+        pyautogui.press("prevtrack")
+        return "Skipped to previous track"
+    except Exception as e:
+        return f"Failed to go to previous track: {e}"
 
 def afk(duration_minutes: int = 30, movement_interval: int = 30):
     """Start AFK macro to prevent being kicked from games."""

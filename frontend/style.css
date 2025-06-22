@@ -118,6 +118,32 @@ body.full-view .center-visualizer {
     z-index: 2;
 }
 
+/* Add header styling for top-left box to match mini overlay */
+.corner-box.top-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: rgba(0, 170, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 170, 255, 0.2); /* Softer border to match mini overlay */
+    border-radius: 4px 4px 0 0;
+    z-index: 1;
+}
+
+.corner-box.top-left::after {
+    content: '📊 System Monitor';
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    color: #00aaff;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 2;
+}
+
 .center-visualizer {
     position: absolute;
     top: 50%;

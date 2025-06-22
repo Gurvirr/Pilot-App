@@ -37,7 +37,7 @@ class MessageLogger {
         this.container.className = 'message-log';
         this.container.innerHTML = `
             <div class="message-log-header">
-                <span class="log-title">📡 Jarvis Messages</span>
+                <span class="log-title">📡 Jarvis Terminal</span>
                 <span class="log-count">0</span>
             </div>
             <div class="message-log-content" id="message-log-content">

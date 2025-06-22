@@ -287,8 +287,7 @@ def jarvis_do(prompt, multiple_actions=True):
             'source': 'jarvis',
             'intent': response.get("intent", "unknown")
         })
-    
-    # Speak the description of what Jarvis is about to do
+      # Speak the description of what Jarvis is about to do
     if response and response.get("description"):
         speak(response["description"])
     

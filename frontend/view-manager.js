@@ -90,24 +90,15 @@ class ViewManager {
             overlayContainer.style.display = 'block';
         }
     }
-    
-    // Method to send messages to both views
+      // Method to send messages to both views
     broadcastMessage(data) {
-        // Send to mini overlay
-        if (window.miniOverlay && this.currentView === 'mini') {
-            window.miniOverlay.addMessage(data);
-        }
-        
-        // Send to full message logger
-        if (window.messageLogger && this.currentView === 'full') {
-            window.messageLogger.addMessage(data);
-        }
-        
-        // Always send to both so they stay in sync
+        // Always send to mini overlay (it's always visible)
         if (window.miniOverlay) {
             window.miniOverlay.addMessage(data);
         }
-        if (window.messageLogger) {
+        
+        // Send to full message logger only when in full view
+        if (window.messageLogger && this.currentView === 'full') {
             window.messageLogger.addMessage(data);
         }
     }
