@@ -12,3 +12,5 @@ pyscreeze
 # Windows-specific packages
 pywin32
 winapps
+
+vosk
