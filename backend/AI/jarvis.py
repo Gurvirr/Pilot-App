@@ -7,7 +7,7 @@ import pyautogui
 import webbrowser
 import enum
 from . import actions
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
 import json
 import ast
@@ -34,6 +34,22 @@ class ActionModel(BaseModel):
             }
         }
 
+class MultipleActionsModel(BaseModel):
+    actions: List[ActionModel] = Field(..., description="List of actions to perform")
+    overall_description: str = Field(..., description="Overall response to the user describing what actions will be performed")
+    execution_order: Optional[List[int]] = Field(None, description="Order in which actions should be executed (0-based indices)")
+
+    class Config:
+        model_config = {
+            "json_schema_extra": {
+                "propertyOrdering": [
+                    "actions",
+                    "overall_description", 
+                    "execution_order"
+                ]
+            }
+        }
+
 class RootModel(BaseModel):
     action: ActionModel
 
@@ -49,27 +65,32 @@ class Recipe(BaseModel):
     recipe_name: str
     ingredients: list[str]
 
-def jarvis_query(prompt):
+def jarvis_query(prompt, multiple_actions=False):
     try:
+        # Choose schema based on whether we want multiple actions
+        if multiple_actions:
+            schema = MultipleActionsModel
+        else:
+            schema = list[ActionModel]
+        
         # Generate structured output
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=list[ActionModel]  # Use the Pydantic schema here
+                response_schema=schema
             ),
         )
 
-        # Access structured data
-        # action_data: ActionModel = response.parsed
-        # print(response.text)
-        # print(action_data[0])
-        # return action_data.dict()
-
-        data = json.loads(response.text.strip())[0]
-        print(data, type(data))
-        return ast.literal_eval(data) if isinstance(data, str) else data
+        # Parse the response
+        if multiple_actions:
+            data = json.loads(response.text.strip())
+            return data
+        else:
+            data = json.loads(response.text.strip())[0]
+            print(data, type(data))
+            return ast.literal_eval(data) if isinstance(data, str) else data
 
     except Exception as e:
         return f"Error: {e}"
@@ -86,7 +107,7 @@ def jarvis_query(prompt):
 #         return jarvis_query(prompt)
 
 
-def extract_response(user_prompt):
+def extract_response(user_prompt, multiple_actions=False):
     # Get available actions dynamically
     available_actions = actions.action_list()
     print(available_actions)
@@ -94,16 +115,13 @@ def extract_response(user_prompt):
     
     prompt = (
         f"""
-        YOU, JARVIS are an AI assistant for gaming and other productivity tasks. Your responses should be brief and confident.
+        YOU, JARVIS are an AI assistant for gaming and other productivity tasks.
 
-        Available actions you can perform: {actions_str}
+            Available actions you can perform: {actions_str}
 
-        You must map the user's request to one of the available intents. Here are rules to follow:
-        - For generic media commands: Use `media_play` for "resume" or "unpause". Use `media_pause` for "stop the song" or "pause". Use `media_next` for "next song" or "skip".
-        - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
-        - For screenshots: Use the `screenshot` intent.
+        Sometimes, the AI voice recognition doesn't do a great job, so you need to look at what you can do and match it with the available actions.
 
-        The description is what you will say to the user. Keep it short.
+        The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
         
         User said: '{user_prompt}'. 
         User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags.
@@ -134,6 +152,27 @@ def execute_action(intent, context):
         print("Unknown or unsupported command.")
         return "Sorry, I don't know how to do that."
 
+def execute_multiple_actions(actions_data):
+    """
+    Execute multiple actions in the specified order
+    """
+    if not actions_data or "actions" not in actions_data:
+        print("No actions to execute")
+        return
+    
+    actions_list = actions_data["actions"]
+    execution_order = actions_data.get("execution_order")
+    
+    # If no specific order is provided, execute in the order they appear
+    if execution_order is None:
+        execution_order = list(range(len(actions_list)))
+    
+    print(f"Executing {len(actions_list)} actions in order: {execution_order}")
+    
+    for i, action in enumerate(actions_list):
+        print(f"Executing action {i+1}/{len(actions_list)}: {action['intent']}")
+        execute_action(action['intent'], action)
+
 
 # Example usage
 if __name__ == "__main__":
@@ -144,24 +183,19 @@ if __name__ == "__main__":
 
     while True:
         user_input = input("You: ")
-        response = extract_response(user_input)
+        # Use multiple actions by default for more flexibility
+        response = extract_response(user_input, multiple_actions=True)
         print(f"Response: {response}")
-        feedback = execute_action(response.get("intent"), response)
-        print(f"Feedback: {feedback}")
+        execute_action(response.get("intent"), response)
 
 
 
-def jarvis_do(prompt): 
+def jarvis_do(prompt, multiple_actions=True): 
     print(f"Jarvis: {prompt}")
-    response = extract_response(prompt)
+    response = extract_response(prompt, multiple_actions=multiple_actions)
     
     # Speak the description of what Jarvis is about to do
     if response and response.get("description"):
         speak(response["description"])
     
-    # Execute the action and get the result feedback
-    feedback = execute_action(response.get("intent"), response)
-
-    # Speak the feedback from the action's execution
-    if feedback:
-        speak(feedback)
+    execute_action(response.get("intent"), response)
