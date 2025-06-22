@@ -6,7 +6,7 @@ import re
 import pyautogui
 import webbrowser
 import enum
-import actions
+from . import actions
 from typing import Optional
 from pydantic import BaseModel, Field
 import json
@@ -127,3 +127,9 @@ if __name__ == "__main__":
         response = extract_response(user_input)
         print(f"Response: {response}")
         execute_action(response.get("intent"), response)
+
+
+def jarvis_do(prompt): 
+    print(f"Jarvis: {prompt}")
+    response = extract_response(prompt)
+    execute_action(response.get("intent"), response)
