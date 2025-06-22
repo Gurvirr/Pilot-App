@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Jarvis</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
     <div class="overlay-container">
@@ -19,10 +21,19 @@
         <div class="corner-box bottom-right">
             <canvas id="canvas-br"></canvas>
         </div>
+        
+        <!-- Restore Center Audio Visualizer -->
         <div class="center-visualizer">
             <canvas id="canvas-center"></canvas>
         </div>
+        
+        <!-- Iron Man Hologram Container -->
+        <div class="hologram-container">
+            <div id="hologram-canvas"></div>
+        </div>
     </div>
+    
     <script src="animations.js"></script>
+    <script src="hologram.js"></script>
 </body>
 </html> 
