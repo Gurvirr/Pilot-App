@@ -6,7 +6,7 @@ import re
 import pyautogui
 import webbrowser
 import enum
-import actions
+from . import actions
 from typing import Optional
 from pydantic import BaseModel, Field
 import json

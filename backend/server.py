@@ -3,6 +3,7 @@ import threading
 import time
 from speech_to_text import speech_to_text_loop
 from AI.jarvis import jarvis_do
+
 import os
 from dotenv import load_dotenv
 from google import genai
@@ -43,6 +44,9 @@ def stt_worker():
         except Exception as e:
             print(f"Error in STT worker: {e}")
             time.sleep(1)  # Brief pause before retrying
+
+
+
 
 @app.route('/')
 def home():
@@ -112,14 +116,15 @@ if __name__ == '__main__':
     print("  GET  /status    - Check STT status")
     print("  POST /test_jarvis - Test jarvis_do with manual text")
     
-    # Auto-start STT on server startup
-    try:
-        initialize_jarvis()
-        stt_running = True
-        stt_thread = threading.Thread(target=stt_worker, daemon=True)
-        stt_thread.start()
-        print("STT auto-started successfully!")
-    except Exception as e:
-        print(f"Failed to auto-start STT: {e}")
+    # Auto-start STT on server startup (only if not already running)
+    if not stt_running:
+        try:
+            initialize_jarvis()
+            stt_running = True
+            stt_thread = threading.Thread(target=stt_worker, daemon=True)
+            stt_thread.start()
+            print("STT auto-started successfully!")
+        except Exception as e:
+            print(f"Failed to auto-start STT: {e}")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)  # Disabled debug to prevent restarts
