@@ -44,6 +44,15 @@ body {
     box-sizing: border-box;
     -webkit-app-region: no-drag;
     pointer-events: none; /* Allow clicks to pass through */
+    transition: width 0.5s ease-in-out, height 0.5s ease-in-out, top 0.5s ease-in-out;
+}
+
+.center-visualizer.focused {
+    width: 300px;
+    height: 300px;
+    top: 20px;
+    transform: translate(-50%, 0);
+    transition: width 0.5s ease-in-out, height 0.5s ease-in-out, top 0.5s ease-in-out;
 }
 
 /* Iron Man Hologram Styles */
@@ -56,6 +65,7 @@ body {
     height: 400px;
     pointer-events: none;
     z-index: 10;
+    transition: all 0.5s ease-in-out;
 }
 
 #hologram-canvas {
@@ -91,4 +101,27 @@ canvas {
 .bottom-right {
     bottom: 20px;
     right: 20px;
+}
+
+#focus-mode-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    padding: 8px 12px;
+    background-color: rgba(0, 170, 255, 0.5);
+    border: 1px solid #00aaff;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.hologram-container.focused {
+    width: 250px;
+    height: 250px;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: auto;
+    right: auto;
 }

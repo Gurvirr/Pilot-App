@@ -44,6 +44,14 @@ function createWindow () {
     }
   });
 
+  // Register P key for audio visualizer toggle
+  globalShortcut.register('P', () => {
+    if (win.isVisible()) {
+      // Send message to frontend to toggle visualizer focus
+      win.webContents.send('toggle-visualizer-focus');
+    }
+  });
+
   // Set window to ignore mouse events (except for specific areas)
   win.setIgnoreMouseEvents(true, { forward: true });
 

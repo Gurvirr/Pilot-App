@@ -10,6 +10,26 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Setup the center audio visualizer ring
     setupAudioVisualizer({ id: 'canvas-center' });
+    
+    // Add P key functionality for audio visualizer via IPC
+    let isVisualizerFocused = false;
+    const centerVisualizer = document.querySelector('.center-visualizer');
+    
+    // Listen for IPC message from main process
+    if (window.require) {
+        const { ipcRenderer } = window.require('electron');
+        ipcRenderer.on('toggle-visualizer-focus', () => {
+            isVisualizerFocused = !isVisualizerFocused;
+            centerVisualizer.classList.toggle('focused', isVisualizerFocused);
+            
+
+            
+            // Trigger another resize after transition completes to ensure proper sizing
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 550); // Slightly before transition ends
+        });
+    }
 });
 
 // Circular Ring of Bars + Rotating Audio Spikes
