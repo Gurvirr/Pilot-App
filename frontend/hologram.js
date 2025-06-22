@@ -7,6 +7,8 @@ class IronManHologram {
         this.animationId = null;
         this.loader = null;
         this.clippingPlanes = [];
+        this.isFocused = false;
+        this.hologramContainer = document.querySelector('.hologram-container');
         this.init();
     }
 
@@ -44,6 +46,13 @@ class IronManHologram {
         
         // Start animation
         this.animate();
+
+        // Add this to the end of your init() method
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'p') {
+                this.toggleFocusMode();
+            }
+        });
     }
 
     setupClippingPlanes() {
@@ -166,6 +175,22 @@ class IronManHologram {
         if (this.renderer) {
             this.renderer.dispose();
         }
+    }
+
+    toggleFocusMode() {
+        this.isFocused = !this.isFocused;
+        this.hologramContainer.classList.toggle('focused', this.isFocused);
+
+        // We need to wait for the CSS transition to finish before resizing the canvas
+        setTimeout(() => {
+            const container = document.getElementById('hologram-canvas');
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight;
+
+            this.renderer.setSize(newWidth, newHeight);
+            this.camera.aspect = newWidth / newHeight;
+            this.camera.updateProjectionMatrix();
+        }, 500); // 500ms matches the CSS transition time
     }
 }
 

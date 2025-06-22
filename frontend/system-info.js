@@ -107,7 +107,7 @@ class SystemInfoDisplay {
         // --- Memory Graph Container (Bottom) ---
         const memoryContainer = document.createElement('div');
         memoryContainer.style.cssText = `
-            width: 50%; /* 50% less length */
+            width: 40%; /* 50% less length */
             height: 32%; /* Approx 1/3 of the height */
             position: relative;
         `;
