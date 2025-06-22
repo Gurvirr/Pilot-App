@@ -6,6 +6,7 @@ class IronManHologram {
         this.hologram = null;
         this.animationId = null;
         this.loader = null;
+        this.clippingPlanes = [];
         this.init();
     }
 
@@ -35,11 +36,43 @@ class IronManHologram {
         // Initialize GLTF loader
         this.loader = new THREE.GLTFLoader();
         
+        // Setup clipping planes to constrain the hologram to the box
+        this.setupClippingPlanes();
+        
         // Load the Iron Man model
         this.loadIronManModel();
         
         // Start animation
         this.animate();
+    }
+
+    setupClippingPlanes() {
+        // Create clipping planes to constrain the hologram within the box
+        // These planes will clip anything outside the intended display area
+        
+        // Left clipping plane (positive X direction)
+        const leftPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 2.5);
+        this.clippingPlanes.push(leftPlane);
+        
+        // Right clipping plane (negative X direction) 
+        const rightPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 2.5);
+        this.clippingPlanes.push(rightPlane);
+        
+        // Top clipping plane (negative Y direction)
+        const topPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 2.5);
+        this.clippingPlanes.push(topPlane);
+        
+        // Bottom clipping plane (positive Y direction)
+        const bottomPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2.5);
+        this.clippingPlanes.push(bottomPlane);
+        
+        // Front clipping plane (negative Z direction)
+        const frontPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 2.5);
+        this.clippingPlanes.push(frontPlane);
+        
+        // Back clipping plane (positive Z direction)
+        const backPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 2.5);
+        this.clippingPlanes.push(backPlane);
     }
 
     loadIronManModel() {
@@ -49,7 +82,7 @@ class IronManHologram {
             (gltf) => {
                 this.hologram = gltf.scene;
                 
-                // Apply hologram effect to the model
+                // Apply hologram effect to the model with clipping
                 this.applyHologramEffect(this.hologram);
                 
                 // Scale and position the model
@@ -81,13 +114,15 @@ class IronManHologram {
         // Apply hologram effect to all materials in the model
         object.traverse((child) => {
             if (child.isMesh) {
-                // Create more holographic material with fewer lines
+                // Create holographic material with clipping planes
                 const hologramMaterial = new THREE.MeshBasicMaterial({
                     color: 0x00aaff,
                     transparent: true,
                     opacity: 0.4, // More transparent
                     wireframe: true,
-                    wireframeLinewidth: 1 // Thinner lines
+                    wireframeLinewidth: 1, // Thinner lines
+                    clippingPlanes: this.clippingPlanes, // Apply clipping planes
+                    clipIntersection: true // Clip at intersection points
                 });
                 
                 // Apply the hologram material
