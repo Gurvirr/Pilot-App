@@ -323,6 +323,68 @@ function setupCanvas(canvasInfo) {
 
     const ctx = canvas.getContext('2d');
     let frame = 0;
+    
+    // Audio-reactive variables for top-right canvas only
+    let audioContext, analyser, dataArray, bufferLength;
+    let isAudioInitialized = false;
+    let audioLevel = 0;
+    let frequencyBands = new Array(8).fill(0); // 8 frequency bands for multiple waves
+    
+    // Initialize audio for top-right canvas (canvas-tr)
+    if (canvasInfo.id === 'canvas-tr') {
+        initAudioForSineWaves();
+    }
+
+    async function initAudioForSineWaves() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                }
+            });
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            analyser.smoothingTimeConstant = 0.8;
+            bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            isAudioInitialized = true;
+            console.log('🎵 Audio-reactive sine waves initialized for top-right corner');
+        } catch (e) {
+            console.log('Microphone access denied for sine waves, using fallback animation');
+            isAudioInitialized = false;
+        }
+    }
+
+    function updateAudioData() {
+        if (!isAudioInitialized || !analyser) return;
+        
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Calculate overall audio level (RMS)
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i] * dataArray[i];
+        }
+        audioLevel = Math.sqrt(sum / bufferLength) / 255;
+        
+        // Split frequency data into 8 bands for multiple sine waves
+        const bandSize = Math.floor(bufferLength / 8);
+        for (let i = 0; i < 8; i++) {
+            let bandSum = 0;
+            for (let j = 0; j < bandSize; j++) {
+                const index = i * bandSize + j;
+                if (index < bufferLength) {
+                    bandSum += dataArray[index];
+                }
+            }
+            frequencyBands[i] = (bandSum / bandSize) / 255;
+        }
+    }
 
     function resizeCanvas() {
         // Set actual canvas size to match CSS-scaled size
@@ -341,7 +403,64 @@ function setupCanvas(canvasInfo) {
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Set line style
+        // Update audio data for top-right canvas
+        if (canvasInfo.id === 'canvas-tr') {
+            updateAudioData();
+        }
+
+        if (canvasInfo.id === 'canvas-tr') {
+            // Enhanced multi-sine wave animation for top-right corner
+            drawMultipleSineWaves(ctx, width, height, frame);
+        } else {
+            // Original simple sine wave for other corners
+            drawSingleSineWave(ctx, width, height, frame, canvasInfo);
+        }
+
+        requestAnimationFrame(animate);
+    }    function drawMultipleSineWaves(ctx, width, height, frame) {
+        const numBars = 32; // Number of vertical bars like an audio analyzer
+        const barWidth = width / numBars;
+        
+        for (let i = 0; i < numBars; i++) {
+            // Calculate base height for each bar - increased resting height
+            let baseHeight = 25 + Math.sin(frame * 0.02 + i * 0.3) * 12; // Higher base oscillation
+            let audioHeight = 0;
+            
+            // Audio reactivity - each bar responds to different frequency bands
+            if (isAudioInitialized && frequencyBands.length > 0) {
+                const bandIndex = Math.floor((i / numBars) * frequencyBands.length);
+                audioHeight = frequencyBands[bandIndex] * (height * 0.3); // Scale to canvas height
+            }
+            
+            // Combine base animation with audio
+            const totalHeight = Math.max(15, baseHeight + audioHeight); // Higher minimum height
+            
+            // Calculate bar position
+            const x = i * barWidth + barWidth * 0.2; // Slight padding
+            const barActualWidth = barWidth * 0.6; // Leave space between bars
+            const y = height - totalHeight; // Start from bottom
+            
+            // Color based on height and position
+            const intensity = totalHeight / (height * 0.4);
+            const hue = 0 + i * 8; // Red spectrum with variations
+            const saturation = 70 + intensity * 20;
+            const lightness = 40 + intensity * 40;
+            const opacity = 0.7 + intensity * 0.3;
+            
+            // Draw the vertical bar
+            ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
+            ctx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness + 30}%, 0.8)`;
+            ctx.shadowBlur = 4 + intensity * 6;
+            
+            ctx.fillRect(x, y, barActualWidth, totalHeight);
+        }
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
+    }
+
+    function drawSingleSineWave(ctx, width, height, frame, canvasInfo) {
+        // Original single sine wave for other corners
         ctx.lineWidth = 2;
         ctx.strokeStyle = canvasInfo.color;
         ctx.shadowColor = canvasInfo.color;
@@ -354,8 +473,6 @@ function setupCanvas(canvasInfo) {
             ctx.lineTo(x, y);
         }
         ctx.stroke();
-
-        requestAnimationFrame(animate);
     }
 
     window.addEventListener('resize', resizeCanvas);

@@ -23,7 +23,6 @@ def speech_to_text_loop():
                             channels=1, callback=callback):
         rec = vosk.KaldiRecognizer(model, samplerate)
         print("Start speaking... say 'jarvis' to activate")
-
         while True:
             data = q.get()
             if rec.AcceptWaveform(data):

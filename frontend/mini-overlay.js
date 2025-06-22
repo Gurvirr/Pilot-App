@@ -36,7 +36,7 @@ class MiniOverlay {
         this.messageLog = document.createElement('div');
         this.messageLog.className = 'mini-message-log';
         this.messageLog.innerHTML = `
-            <div class="mini-log-header">Messages</div>
+            <div class="mini-log-header">Terminal</div>
             <div class="mini-log-content" id="mini-log-content">
                 <div class="mini-message">System ready</div>
             </div>
@@ -199,12 +199,11 @@ class MiniOverlay {
                     height: 100%;
                     border-radius: 50%;
                 }
-                
-                .mini-message-log {
+                  .mini-message-log {
                     background: rgba(10, 10, 10, 0.9);
                     border: 1px solid rgba(0, 170, 255, 0.3);
                     border-radius: 4px;
-                    width: 240px; /* Was 280px */
+                    width: 200px; /* Reduced from 240px to make it smaller */
                     max-height: 150px; /* Was 200px */
                     font-size: 10px;
                     color: #00aaff;
@@ -389,19 +388,19 @@ class MiniOverlay {
                 prefix = 'JARVIS: ';
                 break;
             case 'active':
-                prefix = 'ACTIVE: ';
+                prefix = 'ACTIVE ';
                 break;
             case 'hidden':
-                prefix = 'DONE: ';
+                prefix = 'DONE ';
                 break;
             case 'error':
-                prefix = 'ERROR: ';
+                prefix = 'ERROR ';
                 break;
             default:
-                prefix = 'SYS: ';
+                prefix = 'SYS ';
         }
         
-        const text = data.text || data.message || 'No message';
+        const text = data.text || data.message || '';
         return `${time} ${prefix}${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`;
     }
     

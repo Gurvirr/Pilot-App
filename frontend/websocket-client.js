@@ -97,15 +97,9 @@ class JarvisWebSocket {
         // Broadcast message to appropriate view using view manager
         if (window.viewManager) {
             window.viewManager.broadcastMessage(data);
-        } else {
-            // Fallback: send to both if view manager not ready
-            if (window.messageLogger) {
-                window.messageLogger.addMessage(data);
-            }
-            if (window.miniOverlay) {
-                window.miniOverlay.addMessage(data);
-            }
         }
+        // Note: Removed fallback to prevent duplicate messages
+        // View manager should always be available after initialization
         
         switch (data.type) {
             case 'active':
