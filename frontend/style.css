@@ -72,30 +72,3 @@ canvas {
     bottom: 20px;
     right: 20px;
 }
-
-/* If you want to add an activation button that IS clickable */
-.activation-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    background: rgba(0, 140, 255, 0.8);
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    pointer-events: auto; /* Make this clickable */
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 24px;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-}
-
-.activation-button:hover {
-    background: rgba(0, 140, 255, 1);
-    transform: scale(1.1);
-} 
