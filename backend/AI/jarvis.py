@@ -125,6 +125,14 @@ def execute_action(intent, context):
         return actions.open_app(context["app_name"])
     elif intent == "close_app":
         return actions.close_app(context["app_name"])
+    elif intent == "media_play":
+        return actions.media_play()
+    elif intent == "media_pause":
+        return actions.media_pause()
+    elif intent == "media_next":
+        return actions.media_next()
+    elif intent == "media_previous":
+        return actions.media_previous()
     # elif intent == "quit_game":
         # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
     elif intent == "afk":
