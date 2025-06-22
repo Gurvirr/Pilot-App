@@ -1,5 +1,9 @@
-const { app, BrowserWindow, screen, globalShortcut } = require('electron');
+const { app, BrowserWindow, screen, globalShortcut, ipcMain } = require('electron');
 const path = require('path');
+const SystemMonitor = require('./system-monitor');
+
+let mainWindow;
+let systemMonitor;
 
 function createWindow () {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -19,7 +23,14 @@ function createWindow () {
     }
   });
 
-  win.loadFile(path.join(__dirname, '../frontend/index.html'));
+  win.loadFile('frontend/index.html');
+  
+  // Make global for system monitor
+  global.mainWindow = win;
+  
+  // Start system monitoring
+  systemMonitor = new SystemMonitor();
+  systemMonitor.startMonitoring();
 
   // Start with the window hidden
   win.hide();
@@ -35,13 +46,20 @@ function createWindow () {
 
   // Set window to ignore mouse events (except for specific areas)
   win.setIgnoreMouseEvents(true, { forward: true });
+
+  return win;
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  mainWindow = createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+  if (systemMonitor) {
+    systemMonitor.stopMonitoring();
   }
 });
 
