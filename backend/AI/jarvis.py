@@ -18,8 +18,6 @@ from tts_client import speak
 class ActionModel(BaseModel):
     intent: str = Field(..., description="The specific action to perform")
     description: str = Field(..., description="The response to the user that you are going to say back to them, you can have a little fun with this one")
-    song_name: Optional[str] = Field(None, description="Name of the song (for play_music intent)")
-    song_artist: Optional[str] = Field(None, description="Artist of the song (for play_music intent)")
     app_name: Optional[str] = Field(None, description="Application to open or close (for open_app or close_app intents)")
     text_message: Optional[str] = Field(None, description="Message text (for send_discord intent)")
 
@@ -30,8 +28,6 @@ class ActionModel(BaseModel):
                 "propertyOrdering": [
                     "intent",
                     "description",
-                    "song_name",
-                    "song_artist",
                     "app_name",
                     "text_message"
                 ]
@@ -98,11 +94,16 @@ def extract_response(user_prompt):
     
     prompt = (
         f"""
-        YOU, JARVIS are an AI assistant for gaming and other productivity tasks.
+        YOU, JARVIS are an AI assistant for gaming and other productivity tasks. Your responses should be brief and confident.
+
         Available actions you can perform: {actions_str}
 
-        The SST doesn't work that well so make sure the app you plan to run is an actual app, not something like "modify" because thats actually spotify
-        The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
+        You must map the user's request to one of the available intents. Here are rules to follow:
+        - For generic media commands: Use `media_play` for "resume" or "unpause". Use `media_pause` for "stop the song" or "pause". Use `media_next` for "next song" or "skip".
+        - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
+        - For screenshots: Use the `screenshot` intent.
+
+        The description is what you will say to the user. Keep it short.
         
         User said: '{user_prompt}'. 
         User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags.
