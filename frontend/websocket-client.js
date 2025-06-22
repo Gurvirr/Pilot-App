@@ -1,4 +1,11 @@
 // WebSocket client for Jarvis events
+// Prevent script from running multiple times
+if (window.jarvisWebSocketLoaded) {
+    console.log('⚠️ JarvisWebSocket script already loaded, skipping...');
+} else {
+    window.jarvisWebSocketLoaded = true;
+    console.log('📦 Loading JarvisWebSocket script...');
+
 class JarvisWebSocket {
     constructor(url = 'http://localhost:5000') {
         // Singleton pattern - prevent multiple instances
@@ -6,6 +13,8 @@ class JarvisWebSocket {
             console.log('⚠️ JarvisWebSocket instance already exists, returning existing instance');
             return JarvisWebSocket.instance;
         }
+        
+        console.log('🆕 Creating new JarvisWebSocket instance');
         
         this.url = url;
         this.socket = null;
@@ -63,6 +72,17 @@ class JarvisWebSocket {
         // Expose socket globally to prevent duplicate connections
         window.socket = this.socket;
         
+        // Check if event listeners are already attached
+        if (this.socket._jarvisListenersAttached) {
+            console.log('⚠️ Socket event listeners already attached, skipping...');
+            return;
+        }
+        
+        // Mark as having listeners attached
+        this.socket._jarvisListenersAttached = true;
+        
+        console.log('🔗 Attaching WebSocket event listeners...');
+        
         this.socket.on('connect', () => {
             console.log('Connected to Jarvis WebSocket');
             this.isConnected = true;
@@ -97,6 +117,7 @@ class JarvisWebSocket {
         });
         
         this.socket.on('jarvis_event', (data) => {
+            console.log('🎯 jarvis_event received by socket:', this.socket.id || 'unknown');
             this.handleJarvisEvent(data);
         });
         
@@ -104,7 +125,11 @@ class JarvisWebSocket {
             console.error('WebSocket connection error:', error);
             this.scheduleReconnect();
         });
-    }    handleJarvisEvent(data) {
+        
+        console.log('✅ WebSocket event listeners attached');
+    }
+    
+    handleJarvisEvent(data) {
         console.log('Jarvis event received:', data);
         
         // Broadcast message to appropriate view using view manager
@@ -314,16 +339,27 @@ document.head.insertAdjacentHTML('beforeend', stateStyles);
 
 // Initialize WebSocket connection when DOM is ready
 let jarvisWS = null;
+let initializationCount = 0;
 
 window.addEventListener('DOMContentLoaded', () => {
+    initializationCount++;
+    console.log(`🚀 DOMContentLoaded event #${initializationCount}`);
+    
     // Prevent multiple instances
     if (jarvisWS) {
         console.log('⚠️ WebSocket already initialized, skipping...');
         return;
     }
     
+    // Check if window.socket already exists
+    if (window.socket) {
+        console.log('⚠️ window.socket already exists, skipping WebSocket initialization');
+        return;
+    }
+    
     // Wait a bit for other scripts to load, especially message logger
     setTimeout(() => {
+        console.log('🔌 Initializing JarvisWebSocket...');
         jarvisWS = new JarvisWebSocket();
         
         // Make it globally accessible for debugging
@@ -361,3 +397,5 @@ window.addEventListener('beforeunload', () => {
         jarvisWS.disconnect();
     }
 });
+
+} // End of jarvisWebSocketLoaded check
