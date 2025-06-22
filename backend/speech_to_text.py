@@ -35,6 +35,8 @@ def speech_to_text_loop():
                     start_index = text.lower().index(trigger_word)
                     command = text[start_index:]
                     
+                    
+
                     # We only want to return if there's a command after "jarvis"
                     if len(command.strip()) > len(trigger_word):
                         return command

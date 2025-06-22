@@ -46,8 +46,6 @@ def stt_worker():
             time.sleep(1)  # Brief pause before retrying
 
 
-
-
 @app.route('/')
 def home():
     return jsonify({

@@ -11,11 +11,12 @@ from typing import Optional
 from pydantic import BaseModel, Field
 import json
 import ast
+from tts_client import speak
 
 
 class ActionModel(BaseModel):
     intent: str = Field(..., description="The specific action to perform")
-    description: str = Field(..., description="Detail about the action")
+    description: str = Field(..., description="The response to the user that you are going to say back to them, you can have a little fun with this one")
     song_name: Optional[str] = Field(None, description="Name of the song (for play_music intent)")
     song_artist: Optional[str] = Field(None, description="Artist of the song (for play_music intent)")
     app_name: Optional[str] = Field(None, description="Application to open (for open_app intent)")
@@ -89,9 +90,26 @@ def jarvis_query(prompt):
 
 
 def extract_response(user_prompt):
+    # Get available actions dynamically
+    available_actions = actions.action_list()
+    print(available_actions)
+    actions_str = ", ".join(available_actions)
+    
     prompt = (
-        f"User said: '{user_prompt}'. "
-        "User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags."
+        f"""
+        YOU, JARVIS are an AI assistant for gaming and other productivity tasks.
+
+        Available actions you can perform: {actions_str}
+
+        Sometimes, the AI voice recognition doesn't do a great job, so you need to look at what you can do and match it with the available actions.
+
+        The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
+        
+        User said: '{user_prompt}'. 
+        User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags.
+        
+        Choose the most appropriate intent from: {actions_str}
+        """
     )
     response_dict = jarvis_query(prompt) 
     return response_dict
@@ -119,7 +137,6 @@ if __name__ == "__main__":
 
     load_dotenv()  # Loads variables from .env into environment
     api_key = os.getenv("GEMINI_API_KEY")
-
     client = genai.Client(api_key=api_key)
 
     while True:
@@ -129,7 +146,13 @@ if __name__ == "__main__":
         execute_action(response.get("intent"), response)
 
 
+
 def jarvis_do(prompt): 
     print(f"Jarvis: {prompt}")
     response = extract_response(prompt)
+    
+    # Speak the description of what Jarvis is about to do
+    if response and response.get("description"):
+        speak(response["description"])
+    
     execute_action(response.get("intent"), response)

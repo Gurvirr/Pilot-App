@@ -193,3 +193,4 @@ def open_app(app_name):
     except Exception as e:
         print(f"❌ Error opening {app_name}: {e}")
         return False
+    
