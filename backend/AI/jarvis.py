@@ -20,6 +20,8 @@ class ActionModel(BaseModel):
     description: str = Field(..., description="The response to the user that you are going to say back to them, you can have a little fun with this one")
     app_name: Optional[str] = Field(None, description="Application to open or close (for open_app or close_app intents)")
     text_message: Optional[str] = Field(None, description="Message text (for send_discord intent)")
+    website_name: Optional[str] = Field(None, description="The name of the website to open (for open_website intent)")
+    search_query: Optional[str] = Field(None, description="The query to search on the web (for search_web intent)")
 
     class Config:
         #: Enforce JSON schema output with ordered properties
@@ -29,7 +31,9 @@ class ActionModel(BaseModel):
                     "intent",
                     "description",
                     "app_name",
-                    "text_message"
+                    "text_message",
+                    "website_name",
+                    "search_query"
                 ]
             }
         }
@@ -103,6 +107,8 @@ def extract_response(user_prompt):
         - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
         - For screenshots: Use the `screenshot` intent.
         - For taking a picture: Use the `take_picture` intent if the user wants to use their camera.
+        - For web searches: Use `search_web` and provide the `search_query`. For example, "search for cute puppies" maps to `intent: search_web` and `search_query: "cute puppies"`.
+        - For opening websites: Use `open_website` and provide the `website_name`. Examples: "open youtube" or "go to reddit.com".
 
         The SST doesn't work that well so make sure the app you plan to run is an actual app, not something like "modify" because thats actually spotify.
         The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
@@ -139,6 +145,10 @@ def execute_action(intent, context):
         return actions.media_previous()
     elif intent == "take_picture":
         return actions.take_picture()
+    elif intent == "open_website":
+        return actions.open_website(context["website_name"])
+    elif intent == "search_web":
+        return actions.search_web(context["search_query"])
     elif intent == "afk":
         print("[Mock] Simulating AFK behavior in Valorant...")
         return

@@ -7,6 +7,7 @@ import subprocess
 import re
 import winapps
 import webbrowser
+import urllib.parse
 from google import genai
 from pydantic import BaseModel
 from typing import Literal, Optional
@@ -33,7 +34,9 @@ def action_list():
         "send_discord",
         "afk",
         "quit_game",
-        "take_picture"
+        "take_picture",
+        "open_website",
+        "search_web"
     ]
 
 def screenshot():
@@ -93,6 +96,52 @@ def take_picture():
 
     # Release the camera
     cap.release()
+
+def open_website(website_name: str):
+    """Opens a website in the default browser."""
+    website_name = website_name.lower().replace(" ", "")
+    sites = {
+        "youtube": "https://www.youtube.com",
+        "reddit": "https://www.reddit.com",
+        "instagram": "https://www.instagram.com",
+        "google": "https://www.google.com",
+        "github": "https://github.com",
+        "chatgpt": "https://chat.openai.com",
+        "gpt": "https://chat.openai.com",
+        "gemini": "https://gemini.google.com",
+        "amazon": "https://www.amazon.com",
+        "netflix": "https://www.netflix.com",
+        "twitter": "https://www.x.com",
+        "x": "https://www.x.com",
+        "facebook": "https://www.facebook.com",
+        "wikipedia": "https://www.wikipedia.org",
+    }
+    
+    url = sites.get(website_name)
+
+    if not url:
+        if '.' not in website_name:
+            website_name += ".com"
+        url = "https://" + website_name
+
+    try:
+        webbrowser.open(url, new=2)
+        print(f"✅ Opening {url} in browser.")
+        return 
+    except Exception as e:
+        print(f"❌ Failed to open website {website_name}: {e}")
+        return f"Sorry, I couldn't open that website."
+
+def search_web(query: str):
+    """Performs a web search using the default browser."""
+    try:
+        search_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(query)}"
+        webbrowser.open(search_url, new=2)
+        print(f"✅ Searching for '{query}' on Google.")
+        return
+    except Exception as e:
+        print(f"❌ Failed to perform web search for '{query}': {e}")
+        return "Sorry, I ran into an error trying to search for that."
 
 def _find_and_launch_shortcut(app_name):
     """Finds and launches a shortcut (.lnk) in common locations on Windows."""
