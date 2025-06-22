@@ -111,7 +111,7 @@ def open_app(app_name):
         try:
             webbrowser.open(uri_schemes[app_lower])
             print(f"✅ Opened {app_name} via {uri_schemes[app_lower]} protocol")
-            return f"Opened {app_name}."
+            return
         except Exception as e:
             print(f"⚠️ {app_name} protocol failed: {e}")
 
@@ -134,14 +134,14 @@ def open_app(app_name):
         try:
             subprocess.Popen(system_apps[app_lower], shell=True)
             print(f"✅ Launched system tool '{app_name}' via command '{system_apps[app_lower]}'.")
-            return f"Opened {app_name}."
+            return
         except Exception as e:
             print(f"⚠️ Failed to launch system tool '{app_name}': {e}")
 
 
     # Method 3: Search for shortcuts (finds most user-installed GUI apps)
     if _find_and_launch_shortcut(app_name):
-        return f"Opened {app_name}."
+        return
 
     # Method 4: If the app name has spaces, try a sanitized version (e.g., "snipping tool" -> "snippingtool")
     if ' ' in app_name:
@@ -150,7 +150,7 @@ def open_app(app_name):
             # Use Popen directly for this, as 'start' can be unpredictable with sanitized names
             subprocess.Popen(sanitized_name, shell=True)
             print(f"✅ Launched '{app_name}' by sanitizing its name to '{sanitized_name}'.")
-            return f"Opened {app_name}."
+            return
         except FileNotFoundError:
             print(f"ℹ️ Sanitized name '{sanitized_name}' not found. Continuing...")
         except Exception as e:
@@ -162,7 +162,7 @@ def open_app(app_name):
         subprocess.Popen(f'start "" "{app_name}"', shell=True)
         print(f"✅ Attempted to open '{app_name}' via the 'start' command. This is often successful for registered apps or items in PATH.")
         # This command doesn't block or easily confirm success, so we assume it works if no error is thrown.
-        return f"Opened {app_name}."
+        return
     except Exception as e:
         print(f"ℹ️ The 'start' command failed for '{app_name}': {e}. Trying final methods.")
 
@@ -175,7 +175,7 @@ def open_app(app_name):
             try:
                 subprocess.Popen(f'start "" "{app.name}"', shell=True)
                 print(f"✅ Attempting to launch registered app '{app.name}' via 'start'.")
-                return f"Opened {app_name}."
+                return
             except Exception as e:
                 print(f"ℹ️ 'start' command failed for winapps result '{app.name}': {e}. Trying to parse executable from uninstall string.")
 
@@ -187,7 +187,7 @@ def open_app(app_name):
                         try:
                             subprocess.Popen(f'"{match}"', shell=True)
                             print(f"✅ Opened {app.name} via uninstall string parse: {match}")
-                            return f"Opened {app_name}."
+                            return
                         except Exception as e:
                             print(f"⚠️ Failed to launch {match} from uninstall string: {e}")
     except Exception as e:
@@ -259,7 +259,7 @@ def close_app(app_name):
         # exit code 128 means process not found.
         if result.returncode == 0:
             print(f"✅ Successfully closed '{app_name}' (process: {process_name}).")
-            return f"Closed {app_name}."
+            return
         elif result.returncode == 128 or "not found" in result.stderr.lower():
             print(f"ℹ️ Application '{app_name}' (process: {process_name}) was not running or could not be found with that name.")
             return f"{app_name} wasn't running, so I couldn't close it."
@@ -275,22 +275,22 @@ def close_app(app_name):
 def media_play():
     """Presses the play/pause media key to play media."""
     pyautogui.press("playpause")
-    return "Playing music."
+    return
 
 def media_pause():
     """Presses the play/pause media key to pause media."""
     pyautogui.press("playpause")
-    return "Pausing music."
+    return
 
 def media_next():
     """Presses the next track media key."""
     pyautogui.press("nexttrack")
-    return "Skipping to the next song."
+    return
 
 def media_previous():
     """Presses the previous track media key."""
     pyautogui.press("prevtrack")
-    return "Going back to the previous song."
+    return
 
 if __name__ == "__main__":
     print("TESTING!")

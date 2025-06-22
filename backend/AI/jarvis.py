@@ -103,6 +103,9 @@ def extract_response(user_prompt):
         - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
         - For screenshots: Use the `screenshot` intent.
 
+        The SST doesn't work that well so make sure the app you plan to run is an actual app, not something like "modify" because thats actually spotify.
+        The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
+        
         The description is what you will say to the user. Keep it short.
         
         User said: '{user_prompt}'. 
@@ -117,10 +120,10 @@ def extract_response(user_prompt):
 def execute_action(intent, context):
     if intent == "clip":
         actions.clip_screen()
-        return "Clipping the last 30 seconds for you."
+        return
     elif intent == "screenshot":
         actions.screenshot()
-        return "Screenshot saved."
+        return
     elif intent == "open_app":
         return actions.open_app(context["app_name"])
     elif intent == "close_app":
@@ -137,7 +140,7 @@ def execute_action(intent, context):
         # os.system("taskkill /F /IM valorant.exe")  # Be cautious!
     elif intent == "afk":
         print("[Mock] Simulating AFK behavior in Valorant...")
-        return "Going AFK."
+        return
     else:
         print("Unknown or unsupported command.")
         return "Sorry, I don't know how to do that."
