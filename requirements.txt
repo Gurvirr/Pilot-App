@@ -26,6 +26,8 @@ opencv-python
 pywin32
 winapps
 
-vosk
+faster-whisper
 sounddevice
 numpy
+torch
+silero

@@ -60,7 +60,7 @@ speak("Hello, I am Jarvis!")
 ### Use AI features
 ```bash
 cd backend
-python AI/jarvius.py
+python AI/jarvis.py
 ```
 
 ## Features
