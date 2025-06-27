@@ -71,7 +71,7 @@ def screenshot():
     app_name_clean = re.sub(r'[\\/*?:"<>|]', "", app_name).replace(" ", "_")
 
     screenshot_name = f"screenshot_{now}_{app_name_clean}.png"
-    screenshot_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Screenshots", screenshot_name)
+    screenshot_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "captures", "screenshots", screenshot_name)
     pyautogui.screenshot(screenshot_path)
     print(f"Screenshot saved to {screenshot_path}")
     
@@ -101,7 +101,7 @@ def take_picture():
     # Generate filename
     now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     picture_name = f"picture_{now}.png"
-    picture_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Screenshots", picture_name)
+    picture_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "captures", "pictures", picture_name)
 
     # Save the captured frame
     cv2.imwrite(picture_path, frame)
