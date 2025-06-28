@@ -6,16 +6,9 @@ import threading
 import time
 import requests
 import io
+import base64
 from pathlib import Path
 from dotenv import load_dotenv
-
-# Try to import pygame for direct audio playback
-try:
-    import pygame
-    PYGAME_AVAILABLE = True
-except ImportError:
-    PYGAME_AVAILABLE = False
-    print("Pygame not available, falling back to system player")
 
 # Load environment variables
 load_dotenv()
@@ -23,28 +16,28 @@ load_dotenv()
 class TTSService:
     def __init__(self):
         self.api_key = os.getenv('ELEVENLABS_API_KEY')
-        self.is_speaking = False
+        self._is_speaking = False
         self.current_audio_file = None
         
         # Your current voice settings
         self.voice_id = 'ErXwobaYiN019PkySvjV'  # Antoni
         self.base_url = 'https://api.elevenlabs.io/v1'
         
-        # Initialize pygame if available
-        if PYGAME_AVAILABLE:
-            pygame.mixer.init()
+        # WebSocket reference (will be set by server)
+        self.socketio = None
         
         if not self.api_key:
             raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
+    
+    def set_socketio(self, socketio):
+        """Set the WebSocket reference for audio streaming"""
+        self.socketio = socketio
     
     def initialize(self):
         """Initialize the TTS service"""
         try:
             print("TTS Service initialized successfully")
-            if PYGAME_AVAILABLE:
-                print("Using pygame for direct audio playback")
-            else:
-                print("Using system media player")
+            print("Using Electron for audio playback via WebSocket")
             return True
         except Exception as e:
             print(f"Failed to initialize TTS service: {e}")
@@ -52,7 +45,7 @@ class TTSService:
     
     def speak(self, text: str) -> bool:
         """
-        Speak text using TTS
+        Speak text using TTS and stream audio to Electron
         
         Args:
             text (str): Text to speak
@@ -66,10 +59,10 @@ class TTSService:
         
         try:
             # Stop any current speech
-            if self.is_speaking:
+            if self._is_speaking:
                 self.stop()
             
-            self.is_speaking = True
+            self._is_speaking = True
             
             print(f"Generating speech for: '{text[:50]}{'...' if len(text) > 50 else ''}'")
             
@@ -94,41 +87,46 @@ class TTSService:
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
             
-            # Play audio directly
-            if PYGAME_AVAILABLE:
-                self._play_audio_pygame(response.content)
-            else:
-                self._play_audio_system(response.content)
+            # Stream audio to Electron via WebSocket
+            self._stream_audio_to_electron(response.content, text)
             
             return True
             
         except Exception as e:
             print(f"Error in TTS speak: {e}")
-            self.is_speaking = False
+            self._is_speaking = False
             return False
     
-    def _play_audio_pygame(self, audio_data: bytes):
-        """Play audio directly using pygame"""
+    def _stream_audio_to_electron(self, audio_data: bytes, text: str):
+        """Stream audio data to Electron via WebSocket"""
         try:
-            # Create a file-like object from the audio data
-            audio_stream = io.BytesIO(audio_data)
+            # Convert audio data to base64 for WebSocket transmission
+            audio_base64 = base64.b64encode(audio_data).decode('utf-8')
             
-            # Load and play the audio
-            pygame.mixer.music.load(audio_stream)
-            pygame.mixer.music.play()
-            
-            print("Playing audio with pygame...")
-            
-            # Wait for audio to finish
-            while pygame.mixer.music.get_busy():
-                time.sleep(0.1)
-            
-            self.is_speaking = False
-            print("Audio playback completed")
+            # Send audio data to Electron
+            if self.socketio:
+                self.socketio.emit('tts_audio', {
+                    'type': 'audio_data',
+                    'audio': audio_base64,
+                    'text': text,
+                    'format': 'mp3'
+                })
+                print("Audio data sent to Electron for playback")
+                
+                # Wait for audio to finish (we'll get a completion event from Electron)
+                # For now, we'll estimate based on text length
+                estimated_duration = len(text.split()) * 0.5  # Rough estimate: 0.5 seconds per word
+                time.sleep(estimated_duration)
+                
+                self._is_speaking = False
+                print("Audio playback completed")
+            else:
+                print("WebSocket not available, falling back to system player")
+                self._play_audio_system(audio_data)
             
         except Exception as e:
-            print(f"Error playing audio with pygame: {e}")
-            self.is_speaking = False
+            print(f"Error streaming audio to Electron: {e}")
+            self._is_speaking = False
     
     def _play_audio_system(self, audio_data: bytes):
         """Play audio using system player (fallback)"""
@@ -180,11 +178,13 @@ class TTSService:
     def stop(self) -> bool:
         """Stop current TTS"""
         try:
-            self.is_speaking = False
+            self._is_speaking = False
             
-            # Stop pygame if playing
-            if PYGAME_AVAILABLE:
-                pygame.mixer.music.stop()
+            # Send stop signal to Electron
+            if self.socketio:
+                self.socketio.emit('tts_audio', {
+                    'type': 'stop_audio'
+                })
             
             # Clean up current audio file
             if self.current_audio_file and self.current_audio_file.exists():
@@ -203,7 +203,7 @@ class TTSService:
     
     def is_speaking(self) -> bool:
         """Check if currently speaking"""
-        return self.is_speaking
+        return self._is_speaking
 
 # Create global instance
 tts = TTSService() 

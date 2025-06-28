@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const SystemMonitor = require('./system-monitor');
 const MediaService = require('./media-service');
+const AudioService = require('./audio-service');
 
 console.log('🎬 Starting Jarvis Electron App...');
 console.log(`📅 Date: ${new Date().toISOString()}`);
@@ -13,6 +14,7 @@ console.log(`🟢 Node version: ${process.versions.node}`);
 let mainWindow;
 let systemMonitor;
 let mediaService;
+let audioService;
 
 function createWindow () {
   console.log('🚀 Creating Electron window...');
@@ -57,6 +59,15 @@ function createWindow () {
     console.log('✅ Media service started successfully');
   } catch (error) {
     console.error('❌ Failed to start media service:', error);
+  }
+
+  // Start audio service
+  console.log('🎵 Starting audio service...');
+  try {
+    audioService = new AudioService();
+    console.log('✅ Audio service started successfully');
+  } catch (error) {
+    console.error('❌ Failed to start audio service:', error);
   }
 
   // Start with the window visible (for mini overlay)

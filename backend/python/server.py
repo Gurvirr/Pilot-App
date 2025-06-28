@@ -4,6 +4,7 @@ import threading
 import time
 from speech_to_text import speech_to_text_loop
 from AI.jarvis import jarvis_do
+from tts_service import tts
 
 import os
 from dotenv import load_dotenv
@@ -27,6 +28,9 @@ def initialize_jarvis():
     # Initialize the client in jarvis module
     import AI.jarvis as jarvis_module
     jarvis_module.client = genai.Client(api_key=api_key)
+    
+    # Set WebSocket reference for TTS service
+    tts.set_socketio(socketio)
 
 def stt_worker():
     """Worker function that runs the STT loop forever"""

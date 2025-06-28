@@ -2,7 +2,6 @@
 google-genai
 python-dotenv
 elevenlabs
-pygame
 requests
 flask
 flask-socketio

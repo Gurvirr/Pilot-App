@@ -25,6 +25,7 @@
     "dotenv": "^16.5.0",
     "node-media-controller": "^0.0.6",
     "os-utils": "^0.0.14",
+    "socket.io-client": "^4.7.4",
     "systeminformation": "^5.27.6"
   }
 }
