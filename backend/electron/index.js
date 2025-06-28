@@ -36,7 +36,7 @@ function createWindow () {
 
   console.log('🌐 Loading frontend HTML...');
   console.log('🌐 Loading frontend HTML...');
-  win.loadFile('frontend/index.html');
+  win.loadFile(path.join(__dirname, '../../frontend/index.html'));
   
   // Make global for system monitor and media service
   global.mainWindow = win;
@@ -175,7 +175,7 @@ ipcMain.handle('open-media-file', async (event, filePath) => {
 
 // IPC handler for getting media files
 ipcMain.handle('get-media-files', async () => {
-  console.log('📁 Getting media files from Screenshots and Videos directories...');
+  console.log('📁 Getting media files from captures directories...');
   
   const mediaFiles = [];
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
@@ -183,7 +183,7 @@ ipcMain.handle('get-media-files', async () => {
   
   try {
     // Check Screenshots directory
-    const screenshotsPath = path.join(__dirname, 'Screenshots');
+    const screenshotsPath = path.join(__dirname, '../python/captures/screenshots');
     try {
       const screenshotFiles = await fs.readdir(screenshotsPath);
       for (const file of screenshotFiles) {
@@ -210,7 +210,7 @@ ipcMain.handle('get-media-files', async () => {
     }
     
     // Check Videos directory
-    const videosPath = path.join(__dirname, 'Videos');
+    const videosPath = path.join(__dirname, '../python/captures/videos');
     try {
       const videoFiles = await fs.readdir(videosPath);
       for (const file of videoFiles) {

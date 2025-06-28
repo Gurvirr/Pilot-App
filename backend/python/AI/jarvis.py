@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 import json
 import ast
 from tts_client import speak
+import threading
 
 
 
@@ -265,7 +266,7 @@ if __name__ == "__main__":
 
 
 
-def jarvis_do(prompt, multiple_actions=True): 
+def jarvis_do(prompt, multiple_actions=True):
     print(f"Jarvis: {prompt}")
     
     # Import socketio here to avoid circular imports
@@ -287,9 +288,10 @@ def jarvis_do(prompt, multiple_actions=True):
             'source': 'jarvis',
             'intent': response.get("intent", "unknown")
         })
-      # Speak the description of what Jarvis is about to do
+
+    # Speak the description of what Jarvis is about to do (non-blocking)
     if response and response.get("description"):
-        speak(response["description"])
+        threading.Thread(target=speak, args=(response["description"],), daemon=True).start()
     
     # Send action start event
     if socketio and response:
@@ -301,6 +303,7 @@ def jarvis_do(prompt, multiple_actions=True):
         })
     
     # Execute the action and get the result feedback
+    # This now runs immediately, while the description is being spoken.
     feedback = execute_action(response.get("intent"), response)
 
     # Send action result to WebSocket
@@ -312,6 +315,8 @@ def jarvis_do(prompt, multiple_actions=True):
             'source': 'system'
         })
 
-    # Speak the feedback from the action's execution
+    # Speak the feedback from the action's execution (non-blocking)
     if feedback:
-        speak(feedback)
+        threading.Thread(target=speak, args=(feedback,), daemon=True).start()
+
+client = None
