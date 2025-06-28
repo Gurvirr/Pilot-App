@@ -1,33 +1,18 @@
 window.addEventListener('DOMContentLoaded', () => {
     const canvases = [
         { id: 'canvas-tl', color: '#8be6ff', speed: 0.05, amplitude: 25, frequency: 0.04 },
-        { id: 'canvas-tr', color: '#ff6e6e', speed: 0.03, amplitude: 35, frequency: 0.03 },
         { id: 'canvas-bl', color: '#75ff6e', speed: 0.06, amplitude: 15, frequency: 0.06 },
         { id: 'canvas-br', color: '#f0ff6e', speed: 0.04, amplitude: 20, frequency: 0.02 }
     ];
 
     canvases.forEach(setupCanvas);
     
-    // Removed center audio visualizer ring
-    // setupAudioVisualizer({ id: 'canvas-center' });
-
-    // Add P key functionality for audio visualizer via IPC
-    // let isVisualizerFocused = false;
-    // const centerVisualizer = document.querySelector('.center-visualizer');
-    // if (window.require) {
-    //     const { ipcRenderer } = window.require('electron');
-    //     ipcRenderer.on('toggle-visualizer-focus', () => {
-    //         isVisualizerFocused = !isVisualizerFocused;
-    //         centerVisualizer.classList.toggle('focused', isVisualizerFocused);
-    //         setTimeout(() => {
-    //             window.dispatchEvent(new Event('resize'));
-    //         }, 550);
-    //     });
-    // }
+    // Setup circular wave audio visualizer for top-right corner
+    setupCircularWaveVisualizer({ id: 'canvas-tr' });
 });
 
-// Circular Ring of Bars + Rotating Audio Spikes
-function setupAudioVisualizer(canvasInfo) {
+// Circular Wave Audio Visualizer for top-right corner
+function setupCircularWaveVisualizer(canvasInfo) {
     const canvas = document.getElementById(canvasInfo.id);
     if (!canvas) return;
 
@@ -37,13 +22,13 @@ function setupAudioVisualizer(canvasInfo) {
     let frame = 0;
     
     // Smoothed audio data for easing
-    let smoothedAudioData = new Array(64).fill(0);
-    let targetAudioData = new Array(64).fill(0);
+    let smoothedAudioData = new Array(128).fill(0);
+    let targetAudioData = new Array(128).fill(0);
 
     // Auto-initialize microphone
     async function initAudio() {
         try {
-            console.log('Auto-initializing microphone...');
+            console.log('Auto-initializing microphone for circular wave...');
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: { 
                     echoCancellation: false,
@@ -67,9 +52,9 @@ function setupAudioVisualizer(canvasInfo) {
             
             source.connect(analyser);
             isAudioInitialized = true;
-            console.log('🎵 Chill random distribution with smooth easing ready!');
+            console.log('🎵 Circular wave audio visualizer ready for top-right!');
         } catch (err) {
-            console.log('Microphone access denied, neon blue sine bars');
+            console.log('Microphone access denied, using fallback animation');
             isAudioInitialized = false;
         }
     }
@@ -82,32 +67,54 @@ function setupAudioVisualizer(canvasInfo) {
         ctx.scale(dpr, dpr);
     }
 
-    function drawCircularBarRing() {
+    // Function to get current Jarvis state color
+    function getJarvisStateColor() {
+        if (document.body.classList.contains('jarvis-processing')) {
+            return {
+                hue: 30, // Orange
+                saturation: 100,
+                baseLightness: 50,
+                glowColor: 'hsla(30, 100%, 70%, 0.8)'
+            };
+        } else if (document.body.classList.contains('jarvis-active')) {
+            return {
+                hue: 120, // Green
+                saturation: 100,
+                baseLightness: 50,
+                glowColor: 'hsla(120, 100%, 70%, 0.8)'
+            };
+        } else {
+            return {
+                hue: 190, // Blue (default)
+                saturation: 100,
+                baseLightness: 50,
+                glowColor: 'hsla(190, 100%, 70%, 0.8)'
+            };
+        }
+    }
+
+    function drawCircularWave() {
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         const centerX = width / 2;
         const centerY = height / 2;
         
-        // Calculate safe dimensions to prevent clipping - make it smaller
+        // Calculate safe dimensions for top-right corner
         const maxSize = Math.min(width, height);
-        const baseRadius = maxSize * 0.2; // Reduced from 0.25
-        
-        // Calculate maximum safe bar length to prevent clipping at edges
-        // The furthest a bar can extend is to the edge of the canvas
-        const maxSafeDistance = (maxSize / 2) - 10; // 10px padding from edge
-        const maxSafeBarLength = maxSafeDistance - baseRadius;
+        const baseRadius = maxSize * 0.12; // Smaller base radius for corner
+        const maxWaveAmplitude = maxSize * 0.2; // Smaller max amplitude for corner
         
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Number of bars around the circle
-        const numBars = 64;
+        // Number of points around the circle
+        const numPoints = 128;
         
         // Reset target data
         targetAudioData.fill(0);
         
-        // Minimum noise level - always have some activity
-        const minimumNoiseLevel = 0.2;
+        // Minimum noise level
+        const minimumNoiseLevel = 0.1;
         
         if (isAudioInitialized && analyser && audioContext.state === 'running') {
             analyser.getByteFrequencyData(dataArray);
@@ -119,7 +126,7 @@ function setupAudioVisualizer(canvasInfo) {
             // Find the strongest frequencies
             for (let i = 0; i < bufferLength; i++) {
                 totalEnergy += dataArray[i];
-                if (dataArray[i] > 50) { // Threshold for active frequencies
+                if (dataArray[i] > 50) {
                     activeFrequencies.push({
                         index: i,
                         value: dataArray[i]
@@ -129,179 +136,132 @@ function setupAudioVisualizer(canvasInfo) {
             
             // Sort by strength and take top frequencies
             activeFrequencies.sort((a, b) => b.value - a.value);
-            const topFrequencies = activeFrequencies.slice(0, Math.min(6, activeFrequencies.length)); // Reduced from 8 to 6
+            const topFrequencies = activeFrequencies.slice(0, Math.min(8, activeFrequencies.length));
             
-            // Slowly and randomly distribute these frequencies to different bars
+            // Distribute frequencies to create wave patterns
             topFrequencies.forEach((freq, index) => {
-                // Create fewer positions for more chill effect
-                const numPositions = Math.min(2, Math.floor(freq.value / 100) + 1); // Reduced and higher threshold
+                const numPositions = Math.min(3, Math.floor(freq.value / 80) + 1);
                 
                 for (let j = 0; j < numPositions; j++) {
-                    // Much slower random changes - use slower frame rate for seed
-                    const slowFrame = Math.floor(frame / 30); // Change positions every 30 frames (~0.5 seconds)
-                    const seed = freq.index + slowFrame * 0.5 + j * 23; // Slower seed changes
-                    const randomBarIndex = Math.floor((Math.sin(seed) * 0.5 + 0.5) * numBars);
+                    const slowFrame = Math.floor(frame / 20);
+                    const seed = freq.index + slowFrame * 0.3 + j * 17;
+                    const randomPointIndex = Math.floor((Math.sin(seed) * 0.5 + 0.5) * numPoints);
                     
-                    // Blend the frequency strength into multiple bars
-                    const strength = (freq.value / 255) * Math.pow(0.7, j); // More diminishing
-                    targetAudioData[randomBarIndex] = Math.max(targetAudioData[randomBarIndex], strength);
+                    const strength = (freq.value / 255) * Math.pow(0.8, j);
+                    targetAudioData[randomPointIndex] = Math.max(targetAudioData[randomPointIndex], strength);
                     
-                    // Enhanced neighboring bar effect - affect more neighbors with gradual falloff
-                    for (let k = 1; k <= 4; k++) { // Affect 4 neighbors on each side
-                        const falloff = Math.pow(0.6, k); // Gradual falloff
-                        const neighbor1 = (randomBarIndex + k) % numBars;
-                        const neighbor2 = (randomBarIndex - k + numBars) % numBars;
+                    // Create wave-like distribution to neighboring points
+                    for (let k = 1; k <= 6; k++) {
+                        const falloff = Math.cos((k / 6) * Math.PI) * 0.5 + 0.5; // Cosine falloff for wave effect
+                        const neighbor1 = (randomPointIndex + k) % numPoints;
+                        const neighbor2 = (randomPointIndex - k + numPoints) % numPoints;
                         targetAudioData[neighbor1] = Math.max(targetAudioData[neighbor1], strength * falloff);
                         targetAudioData[neighbor2] = Math.max(targetAudioData[neighbor2], strength * falloff);
                     }
                 }
             });
             
-            // Add some base energy distribution to all bars
-            const baseEnergy = (totalEnergy / bufferLength / 255) * 0.15; // Reduced base energy
-            for (let i = 0; i < numBars; i++) {
+            // Add base energy distribution
+            const baseEnergy = (totalEnergy / bufferLength / 255) * 0.1;
+            for (let i = 0; i < numPoints; i++) {
                 targetAudioData[i] = Math.max(targetAudioData[i], baseEnergy);
                 
-                // Much subtler time-based variation
-                const timeVariation = Math.sin(frame * 0.02 + i * 0.2) * 0.05; // Slower and smaller
+                // Subtle time-based variation
+                const timeVariation = Math.sin(frame * 0.01 + i * 0.1) * 0.03;
                 targetAudioData[i] = Math.max(0, targetAudioData[i] + timeVariation);
             }
         }
         
-        // Apply minimum noise level to all bars - ensures always visible
-        for (let i = 0; i < numBars; i++) {
+        // Apply minimum noise level
+        for (let i = 0; i < numPoints; i++) {
             targetAudioData[i] = Math.max(targetAudioData[i], minimumNoiseLevel);
         }
         
         // Smooth easing towards target values
-        for (let i = 0; i < numBars; i++) {
+        for (let i = 0; i < numPoints; i++) {
             const diff = targetAudioData[i] - smoothedAudioData[i];
             
-            // Fast ease-in, medium ease-out
             let easeSpeed;
             if (diff > 0) {
-                // Easing up (reacting to new sound) - fast
-                easeSpeed = 0.25; // Fast for responsiveness
+                easeSpeed = 0.2; // Fast for responsiveness
             } else {
-                // Easing down (fading out) - medium speed
-                easeSpeed = 0.08; // Faster than before but still gradual
+                easeSpeed = 0.05; // Slower for smooth decay
             }
             
             smoothedAudioData[i] += diff * easeSpeed;
             
-            // Prevent tiny values from lingering
             if (Math.abs(diff) < 0.01) {
                 smoothedAudioData[i] = targetAudioData[i];
             }
         }
 
-        // Calculate overall audio intensity from smoothed data
+        // Calculate overall audio intensity
         const totalAudioIntensity = smoothedAudioData.reduce((sum, val) => sum + val, 0) / smoothedAudioData.length;
 
-        // Draw each bar with neon blue glow
-        for (let i = 0; i < numBars; i++) {
-            const angle = (i / numBars) * Math.PI * 2;
+        // Get current Jarvis state color
+        const stateColor = getJarvisStateColor();
+
+        // Draw the circular wave
+        ctx.beginPath();
+        
+        for (let i = 0; i <= numPoints; i++) {
+            const angle = (i / numPoints) * Math.PI * 2;
             
-            // Smaller sine wave amplitude for subtler base animation
-            const sineWave1 = Math.sin(frame * 0.04 + angle * 8) * 1.5; // Reduced from 3 to 1.5
-            const sineWave2 = Math.sin(frame * 0.03 + angle * 12) * 1; // Reduced from 2 to 1
+            // Base sine wave animation
+            const sineWave1 = Math.sin(frame * 0.03 + angle * 6) * 2;
+            const sineWave2 = Math.sin(frame * 0.02 + angle * 4) * 1.5;
             const baseSineOffset = sineWave1 + sineWave2;
             
-            // Use the smoothed audio data for gradual changes
-            const circularBarAmplitude = smoothedAudioData[i] * maxSafeBarLength;
+            // Audio-reactive wave amplitude
+            const audioIndex = i % numPoints;
+            const waveAmplitude = smoothedAudioData[audioIndex] * maxWaveAmplitude;
             
-            // Combine base sine with audio and clamp to safe length
-            const rawBarLength = Math.max(8, baseSineOffset + circularBarAmplitude); // Increased minimum from 5 to 8
-            const totalBarLength = Math.min(rawBarLength, maxSafeBarLength);
+            // Combine base animation with audio
+            const totalAmplitude = Math.max(5, baseSineOffset + waveAmplitude);
+            const radius = baseRadius + totalAmplitude;
             
-            // Calculate bar positions
-            const innerRadius = baseRadius + baseSineOffset;
-            const outerRadius = innerRadius + totalBarLength;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
             
-            const innerX = centerX + Math.cos(angle) * innerRadius;
-            const innerY = centerY + Math.sin(angle) * innerRadius;
-            const outerX = centerX + Math.cos(angle) * outerRadius;
-            const outerY = centerY + Math.sin(angle) * outerRadius;
-            
-            // Draw audio-reactive wave
-            const baseAmplitude = 10;
-            const reactiveAmplitude = smoothedAudioData[i] * 80; // Increased sensitivity
-            const totalAmplitude = baseAmplitude + reactiveAmplitude;
-            
-            // Keep consistent blue color
-            let color = '#00d4ff'; // Always blue
-            let glowColor = '#00aaff'; // Slightly darker blue for glow
-
-            // Set line style
-            ctx.lineWidth = 1 + smoothedAudioData[i] * 4;
-            ctx.strokeStyle = color;
-            ctx.shadowColor = glowColor;
-            ctx.shadowBlur = 3 + smoothedAudioData[i] * 20;
-            
-            ctx.beginPath();
-            ctx.moveTo(innerX, innerY);
-            ctx.lineTo(outerX, outerY);
-            ctx.stroke();
-            
-            // Add bright inner core for higher-intensity bars
-            if (smoothedAudioData[i] > 0.3) {
-                ctx.beginPath();
-                ctx.strokeStyle = `hsla(${hue}, 100%, ${Math.min(lightness + 50, 95)}%, 0.8)`;
-                ctx.lineWidth = 3;
-                ctx.shadowBlur = 20 + smoothedAudioData[i] * 10;
-                ctx.shadowColor = `hsla(${hue}, 100%, 90%, 0.9)`;
-                
-                const coreLength = totalBarLength * 0.7;
-                const coreOuterRadius = innerRadius + coreLength;
-                const coreOuterX = centerX + Math.cos(angle) * coreOuterRadius;
-                const coreOuterY = centerY + Math.sin(angle) * coreOuterRadius;
-                
-                ctx.moveTo(innerX, innerY);
-                ctx.lineTo(coreOuterX, coreOuterY);
-                ctx.stroke();
-            }
-            
-            // Add ultra-bright tip for very high intensity
-            if (smoothedAudioData[i] > 0.6) {
-                ctx.beginPath();
-                ctx.strokeStyle = `hsla(${hue}, 100%, 95%, 1)`;
-                ctx.lineWidth = 2;
-                ctx.shadowBlur = 25;
-                ctx.shadowColor = `hsla(${hue}, 100%, 95%, 1)`;
-                
-                const tipLength = totalBarLength * 0.3;
-                const tipStartRadius = outerRadius - tipLength;
-                const tipStartX = centerX + Math.cos(angle) * tipStartRadius;
-                const tipStartY = centerY + Math.sin(angle) * tipStartRadius;
-                
-                ctx.moveTo(tipStartX, tipStartY);
-                ctx.lineTo(outerX, outerY);
-                ctx.stroke();
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
             }
         }
+        
+        // Close the path
+        ctx.closePath();
+        
+        // Create gradient for the wave (transparent center) with state-based colors
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxSize / 2);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)'); // Transparent center
+        gradient.addColorStop(0.3, `hsla(${stateColor.hue}, ${stateColor.saturation}%, ${stateColor.baseLightness + totalAudioIntensity * 30}%, ${0.6 + totalAudioIntensity * 0.3})`);
+        gradient.addColorStop(0.7, `hsla(${stateColor.hue}, ${stateColor.saturation}%, ${stateColor.baseLightness + totalAudioIntensity * 20}%, ${0.4 + totalAudioIntensity * 0.2})`);
+        gradient.addColorStop(1, `hsla(${stateColor.hue}, ${stateColor.saturation}%, ${stateColor.baseLightness + totalAudioIntensity * 10}%, ${0.2 + totalAudioIntensity * 0.1})`);
+        
+        // Draw the wave with glow effect
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = stateColor.glowColor;
+        ctx.shadowBlur = 15 + totalAudioIntensity * 20;
+        ctx.fill();
+        
+        // Draw wave outline with state-based color
+        ctx.strokeStyle = `hsla(${stateColor.hue}, ${stateColor.saturation}%, ${stateColor.baseLightness + totalAudioIntensity * 25}%, ${0.9 + totalAudioIntensity * 0.1})`;
+        ctx.lineWidth = 2 + totalAudioIntensity * 3;
+        ctx.shadowBlur = 8 + totalAudioIntensity * 15;
+        ctx.stroke();
         
         // Reset shadow
         ctx.shadowBlur = 0;
 
-        // Draw center circle with neon blue glow (bigger)
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, baseRadius - 5, 0, Math.PI * 2);
-        ctx.strokeStyle = `hsla(190, 90%, ${50 + totalAudioIntensity * 40}%, ${0.3 + totalAudioIntensity * 0.5})`;
-        ctx.lineWidth = 3;
-        ctx.shadowColor = 'hsla(190, 90%, 70%, 0.8)';
-        ctx.shadowBlur = 8 + totalAudioIntensity * 12;
-        ctx.stroke();
-
-        // Reset shadow
-        ctx.shadowBlur = 0;
-
-        // No debug text - clean visualizer only
+        // No center circle - completely transparent center
 
         frame++;
     }
 
     function animate() {
-        drawCircularBarRing();
+        drawCircularWave();
         requestAnimationFrame(animate);
     }
 
@@ -314,75 +274,13 @@ function setupAudioVisualizer(canvasInfo) {
     setTimeout(initAudio, 1000);
 }
 
-// Original wave animation for corners
+// Original wave animation for other corners
 function setupCanvas(canvasInfo) {
     const canvas = document.getElementById(canvasInfo.id);
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     let frame = 0;
-    
-    // Audio-reactive variables for top-right canvas only
-    let audioContext, analyser, dataArray, bufferLength;
-    let isAudioInitialized = false;
-    let audioLevel = 0;
-    let frequencyBands = new Array(8).fill(0); // 8 frequency bands for multiple waves
-    
-    // Initialize audio for top-right canvas (canvas-tr)
-    if (canvasInfo.id === 'canvas-tr') {
-        initAudioForSineWaves();
-    }
-
-    async function initAudioForSineWaves() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false
-                }
-            });
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            analyser.smoothingTimeConstant = 0.8;
-            bufferLength = analyser.frequencyBinCount;
-            dataArray = new Uint8Array(bufferLength);
-            const source = audioContext.createMediaStreamSource(stream);
-            source.connect(analyser);
-            isAudioInitialized = true;
-            console.log('🎵 Audio-reactive sine waves initialized for top-right corner');
-        } catch (e) {
-            console.log('Microphone access denied for sine waves, using fallback animation');
-            isAudioInitialized = false;
-        }
-    }
-
-    function updateAudioData() {
-        if (!isAudioInitialized || !analyser) return;
-        
-        analyser.getByteFrequencyData(dataArray);
-        
-        // Calculate overall audio level (RMS)
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i] * dataArray[i];
-        }
-        audioLevel = Math.sqrt(sum / bufferLength) / 255;
-        
-        // Split frequency data into 8 bands for multiple sine waves
-        const bandSize = Math.floor(bufferLength / 8);
-        for (let i = 0; i < 8; i++) {
-            let bandSum = 0;
-            for (let j = 0; j < bandSize; j++) {
-                const index = i * bandSize + j;
-                if (index < bufferLength) {
-                    bandSum += dataArray[index];
-                }
-            }
-            frequencyBands[i] = (bandSum / bandSize) / 255;
-        }
-    }
 
     function resizeCanvas() {
         // Set actual canvas size to match CSS-scaled size
@@ -401,60 +299,10 @@ function setupCanvas(canvasInfo) {
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Update audio data for top-right canvas
-        if (canvasInfo.id === 'canvas-tr') {
-            updateAudioData();
-        }
-
-        if (canvasInfo.id === 'canvas-tr') {
-            // Enhanced multi-sine wave animation for top-right corner
-            drawMultipleSineWaves(ctx, width, height, frame);
-        } else {
-            // Original simple sine wave for other corners
-            drawSingleSineWave(ctx, width, height, frame, canvasInfo);
-        }
+        // Original simple sine wave for other corners
+        drawSingleSineWave(ctx, width, height, frame, canvasInfo);
 
         requestAnimationFrame(animate);
-    }    function drawMultipleSineWaves(ctx, width, height, frame) {
-        const numBars = 32; // Number of vertical bars like an audio analyzer
-        const barWidth = width / numBars;
-        
-        for (let i = 0; i < numBars; i++) {
-            // Calculate base height for each bar - increased resting height
-            let baseHeight = 25 + Math.sin(frame * 0.02 + i * 0.3) * 12; // Higher base oscillation
-            let audioHeight = 0;
-            
-            // Audio reactivity - each bar responds to different frequency bands
-            if (isAudioInitialized && frequencyBands.length > 0) {
-                const bandIndex = Math.floor((i / numBars) * frequencyBands.length);
-                audioHeight = frequencyBands[bandIndex] * (height * 0.3); // Scale to canvas height
-            }
-            
-            // Combine base animation with audio
-            const totalHeight = Math.max(15, baseHeight + audioHeight); // Higher minimum height
-            
-            // Calculate bar position
-            const x = i * barWidth + barWidth * 0.2; // Slight padding
-            const barActualWidth = barWidth * 0.6; // Leave space between bars
-            const y = height - totalHeight; // Start from bottom
-            
-            // Color based on height and position - changed to blue spectrum
-            const intensity = totalHeight / (height * 0.4);
-            const hue = 190 + i * 3; // Blue spectrum (190-220) with subtle variations
-            const saturation = 80 + intensity * 15;
-            const lightness = 50 + intensity * 30;
-            const opacity = 0.7 + intensity * 0.3;
-            
-            // Draw the vertical bar
-            ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
-            ctx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness + 30}%, 0.8)`;
-            ctx.shadowBlur = 4 + intensity * 6;
-            
-            ctx.fillRect(x, y, barActualWidth, totalHeight);
-        }
-        
-        // Reset shadow
-        ctx.shadowBlur = 0;
     }
 
     function drawSingleSineWave(ctx, width, height, frame, canvasInfo) {
