@@ -116,6 +116,8 @@ def jarvis_query(prompt, multiple_actions=False):
     except Exception as e:
         return f"Error: {e}"
 
+def jarvis_query_LLAMA(prompt, multiple_actions=False):
+    
 
 # def handle_jarvis_command(prompt):
 #     if "clip" in prompt:

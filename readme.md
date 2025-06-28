@@ -55,7 +55,7 @@ python -m venv venv
 **d. Install Python Dependencies:**
 The `requirements.txt` file is now located in the `backend/python` directory.
 ```bash
-pip install -r backend/python/requirements.txt
+pip install -r requirements.txt
 ```
 
 **e. Install Node.js Dependencies:**
