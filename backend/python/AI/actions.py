@@ -20,16 +20,9 @@ import clip
 def clip_screen():
     print("Saving clip") 
     clip.save_clip()
-import cv2
-
-import clip
 
 # Disable pyautogui failsafe for media keys
 pyautogui.FAILSAFE = False
-
-def clip_screen():
-    print("Saving clip") 
-    clip.save_clip()
 
 def action_list():
     """List available actions."""

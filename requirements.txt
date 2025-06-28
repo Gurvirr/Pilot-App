@@ -1,32 +1,27 @@
-# Core AI and API packages
-google-genai
-python-dotenv
-elevenlabs
-requests
+# Web & API Frameworks
 flask
 flask-socketio
-flask-socketio
+requests
 
-# OBS WebSocket integration
-obsws-python
-
-# GUI automation and screen capture
-pyautogui
-pyscreeze
-Pillow
-
-# Real OS input support
-pynput
-
-# Computer vision
-opencv-python
-
-# Windows-specific packages
-pywin32
-winapps
-
+# AI & Machine Learning
+google-genai
+elevenlabs
 faster-whisper
 sounddevice
 numpy
 torch
 silero
+opencv-python
+
+# System & Automation
+pyautogui
+pyscreeze
+pynput
+pywin32
+winapps
+obsws-python
+
+# Utilities
+python-dotenv
+pydantic
+Pillow
