@@ -1,0 +1,26 @@
+# Web & API Frameworks
+flask
+flask-socketio
+requests
+
+# AI & Machine Learning
+google-genai
+elevenlabs
+faster-whisper
+sounddevice
+numpy
+torch
+silero
+opencv-python
+
+# System & Automation
+pyautogui
+pyscreeze
+pynput
+winapps
+obsws-python
+
+# Utilities
+python-dotenv
+pydantic
+Pillow

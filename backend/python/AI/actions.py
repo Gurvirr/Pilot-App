@@ -2,10 +2,13 @@ import os
 import pyautogui
 import datetime
 import sys
-import win32gui
+if sys.platform == "win32":
+    import win32api
+    import win32con
+    import winapps
+
 import subprocess
 import re
-import winapps
 import webbrowser
 import urllib.parse
 from google import genai
@@ -282,16 +285,16 @@ def _launch_steam_game(game_name: str):
     return f"Could not find Steam game: {game_name}"
 
 def open_app(app_name):
-    """Open an application by its name using a multi-pronged, more generic approach."""
+    """Open an application by its name using a multi-pronged, platform-aware approach."""
     print(f"Attempting to open application: '{app_name}'")
     app_lower = app_name.lower()
 
-    # First, check if it's a Steam game
+    # First, check if it's a Steam game (cross-platform)
     steam_result = _launch_steam_game(app_name)
     if "Launched" in steam_result or "Could not find Steam game" not in steam_result:
         return steam_result
 
-    # Method 1: URI Schemes (a concession to reliability for a few tricky apps)
+    # Method 1: URI Schemes (cross-platform)
     uri_schemes = {
         "spotify": "spotify:",
         "discord": "discord://",
@@ -305,6 +308,19 @@ def open_app(app_name):
         except Exception as e:
             print(f"⚠️ {app_name} protocol failed: {e}")
 
+    # Platform-specific methods
+    if sys.platform == "win32":
+        return _open_app_windows(app_name, app_lower)
+    elif sys.platform == "darwin":
+        return _open_app_macos(app_name, app_lower)
+    elif sys.platform.startswith("linux"):
+        return _open_app_linux(app_name, app_lower)
+    else:
+        print(f"❌ Unsupported platform: {sys.platform}")
+        return f"Sorry, opening apps is not supported on {sys.platform}."
+
+def _open_app_windows(app_name, app_lower):
+    """Windows-specific app opening logic."""
     # Method 2: Check for common system tools with specific commands
     system_apps = {
         "file explorer": "explorer.exe",
@@ -321,7 +337,6 @@ def open_app(app_name):
         "control panel": "control.exe",
     }
     if app_lower in system_apps:
-        
         try:
             subprocess.Popen(system_apps[app_lower], shell=True)
             print(f"✅ Launched system tool '{app_name}' via command '{system_apps[app_lower]}'.")
@@ -333,11 +348,10 @@ def open_app(app_name):
     if _find_and_launch_shortcut(app_name):
         return
 
-    # Method 4: If the app name has spaces, try a sanitized version (e.g., "snipping tool" -> "snippingtool")
+    # Method 4: If the app name has spaces, try a sanitized version
     if ' ' in app_name:
         sanitized_name = app_name.replace(' ', '')
         try:
-            # Use Popen directly for this, as 'start' can be unpredictable with sanitized names
             subprocess.Popen(sanitized_name, shell=True)
             print(f"✅ Launched '{app_name}' by sanitizing its name to '{sanitized_name}'.")
             return
@@ -346,29 +360,25 @@ def open_app(app_name):
         except Exception as e:
             print(f"⚠️ Attempt with sanitized name '{sanitized_name}' failed: {e}")
 
-    # Method 5: Use the 'start' command (for anything in PATH or registered with the OS)
+    # Method 5: Use the 'start' command
     try:
         subprocess.Popen(f'start "" "{app_name}"', shell=True)
-        print(f"✅ Attempted to open '{app_name}' via the 'start' command. This is often successful for registered apps or items in PATH.")
-        # This command doesn't block or easily confirm success, so we assume it works if no error is thrown.
+        print(f"✅ Attempted to open '{app_name}' via the 'start' command.")
         return
     except Exception as e:
         print(f"ℹ️ The 'start' command failed for '{app_name}': {e}. Trying final methods.")
 
-    # Method 6: Use winapps to find app in the registry (slower, but a good deep search)
+    # Method 6: Use winapps to find app in the registry
     try:
-        # We search by the original name, as it's more likely to match the registry entry
         for app in winapps.search_installed(app_name):
             print(f"Found app via winapps: {app.name}")
-            # First, try to launch the specific app by its registered name
             try:
                 subprocess.Popen(f'start "" "{app.name}"', shell=True)
                 print(f"✅ Attempting to launch registered app '{app.name}' via 'start'.")
                 return
             except Exception as e:
-                print(f"ℹ️ 'start' command failed for winapps result '{app.name}': {e}. Trying to parse executable from uninstall string.")
+                print(f"ℹ️ 'start' command failed for winapps result '{app.name}': {e}.")
 
-            # If that fails, fall back to parsing the uninstall string
             if hasattr(app, 'uninstall_string') and app.uninstall_string:
                 exe_matches = re.findall(r'"([^"]*\.exe)"', app.uninstall_string)
                 for match in exe_matches:
@@ -382,17 +392,183 @@ def open_app(app_name):
     except Exception as e:
         print(f"⚠️ winapps search failed: {e}")
     
-    print(f"❌ All generic methods failed. Could not open application '{app_name}'.")
+    print(f"❌ All Windows methods failed. Could not open application '{app_name}'.")
+    return f"Sorry, I couldn't find an application named {app_name} to open."
+
+def _open_app_macos(app_name, app_lower):
+    """macOS-specific app opening logic."""
+    # Method 1: Try opening via 'open' command with .app extension
+    try:
+        subprocess.Popen(['open', '-a', app_name])
+        print(f"✅ Opened '{app_name}' via 'open -a' command.")
+        return
+    except Exception as e:
+        print(f"ℹ️ 'open -a' failed for '{app_name}': {e}")
+
+    # Method 2: Common system applications
+    system_apps = {
+        "finder": "Finder",
+        "safari": "Safari",
+        "terminal": "Terminal",
+        "activity monitor": "Activity Monitor",
+        "calculator": "Calculator",
+        "textedit": "TextEdit",
+        "preview": "Preview",
+        "system preferences": "System Preferences",
+        "app store": "App Store",
+        "mail": "Mail",
+        "calendar": "Calendar",
+        "contacts": "Contacts",
+        "notes": "Notes",
+        "reminders": "Reminders",
+        "maps": "Maps",
+        "photos": "Photos",
+        "facetime": "FaceTime",
+        "messages": "Messages",
+    }
+    
+    if app_lower in system_apps:
+        try:
+            subprocess.Popen(['open', '-a', system_apps[app_lower]])
+            print(f"✅ Opened system app '{app_name}' via '{system_apps[app_lower]}'.")
+            return
+        except Exception as e:
+            print(f"⚠️ Failed to open system app '{app_name}': {e}")
+
+    # Method 3: Try with common app name variations
+    app_variations = [
+        app_name,
+        app_name.title(),
+        app_name.capitalize(),
+        app_name.replace(' ', ''),
+        app_name.replace(' ', '-'),
+    ]
+    
+    for variation in app_variations:
+        try:
+            subprocess.Popen(['open', '-a', variation])
+            print(f"✅ Opened '{app_name}' using variation '{variation}'.")
+            return
+        except Exception as e:
+            continue
+
+    print(f"❌ All macOS methods failed. Could not open application '{app_name}'.")
+    return f"Sorry, I couldn't find an application named {app_name} to open."
+
+def _open_app_linux(app_name, app_lower):
+    """Linux-specific app opening logic."""
+    # Method 1: Try direct command execution
+    try:
+        subprocess.Popen([app_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(f"✅ Launched '{app_name}' directly.")
+        return
+    except FileNotFoundError:
+        print(f"ℹ️ '{app_name}' not found in PATH. Trying other methods...")
+    except Exception as e:
+        print(f"ℹ️ Direct launch failed for '{app_name}': {e}")
+
+    # Method 2: Common Linux applications and their command names
+    linux_apps = {
+        "firefox": "firefox",
+        "chrome": "google-chrome",
+        "google chrome": "google-chrome",
+        "chromium": "chromium-browser",
+        "file manager": "nautilus",
+        "files": "nautilus",
+        "nautilus": "nautilus",
+        "terminal": "gnome-terminal",
+        "calculator": "gnome-calculator",
+        "text editor": "gedit",
+        "gedit": "gedit",
+        "code": "code",
+        "vscode": "code",
+        "visual studio code": "code",
+        "gimp": "gimp",
+        "libreoffice": "libreoffice",
+        "writer": "libreoffice --writer",
+        "calc": "libreoffice --calc",
+        "impress": "libreoffice --impress",
+        "thunderbird": "thunderbird",
+        "vlc": "vlc",
+        "system monitor": "gnome-system-monitor",
+        "settings": "gnome-control-center",
+        "software": "gnome-software",
+    }
+    
+    if app_lower in linux_apps:
+        try:
+            cmd = linux_apps[app_lower].split()
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"✅ Launched Linux app '{app_name}' via command '{linux_apps[app_lower]}'.")
+            return
+        except Exception as e:
+            print(f"⚠️ Failed to launch Linux app '{app_name}': {e}")
+
+    # Method 3: Try with common name variations
+    app_variations = [
+        app_lower,
+        app_lower.replace(' ', '-'),
+        app_lower.replace(' ', '_'),
+        app_lower.replace(' ', ''),
+    ]
+    
+    for variation in app_variations:
+        try:
+            subprocess.Popen([variation], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            print(f"✅ Launched '{app_name}' using variation '{variation}'.")
+            return
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            continue
+
+    # Method 4: Try using desktop file approach
+    try:
+        # Look for .desktop files in common locations
+        desktop_dirs = [
+            '/usr/share/applications',
+            '/usr/local/share/applications',
+            os.path.expanduser('~/.local/share/applications')
+        ]
+        
+        for desktop_dir in desktop_dirs:
+            if os.path.exists(desktop_dir):
+                for filename in os.listdir(desktop_dir):
+                    if filename.endswith('.desktop'):
+                        desktop_file = os.path.join(desktop_dir, filename)
+                        try:
+                            with open(desktop_file, 'r') as f:
+                                content = f.read()
+                                if app_lower in content.lower():
+                                    subprocess.Popen(['gtk-launch', filename[:-8]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    print(f"✅ Launched '{app_name}' via desktop file '{filename}'.")
+                                    return
+                        except Exception:
+                            continue
+    except Exception as e:
+        print(f"ℹ️ Desktop file search failed: {e}")
+
+    print(f"❌ All Linux methods failed. Could not open application '{app_name}'.")
     return f"Sorry, I couldn't find an application named {app_name} to open."
 
 def close_app(app_name):
-    """Close an application by its name."""
-    if sys.platform != "win32":
-        print("❌ This function is only supported on Windows.")
-        return "Sorry, this function only works on Windows."
-
+    """Close an application by its name using platform-specific methods."""
+    print(f"Attempting to close application: '{app_name}'")
     app_lower = app_name.lower()
-    
+
+    # Platform-specific methods
+    if sys.platform == "win32":
+        return _close_app_windows(app_name, app_lower)
+    elif sys.platform == "darwin":
+        return _close_app_macos(app_name, app_lower)
+    elif sys.platform.startswith("linux"):
+        return _close_app_linux(app_name, app_lower)
+    else:
+        print(f"❌ Unsupported platform: {sys.platform}")
+        return f"Sorry, closing apps is not supported on {sys.platform}."
+
+def _close_app_windows(app_name, app_lower):
+    """Windows-specific app closing logic."""
     # Dictionary mapping friendly names to process executable names
     app_to_process = {
         # Browsers
@@ -420,7 +596,7 @@ def close_app(app_name):
         "spotify": "Spotify.exe",
         "steam": "steam.exe",
         # System tools
-        "file explorer": "explorer.exe", # Note: closing explorer.exe will restart the shell.
+        "file explorer": "explorer.exe",
         "explorer": "explorer.exe",
         "task manager": "Taskmgr.exe",
         "notepad": "notepad.exe",
@@ -441,26 +617,165 @@ def close_app(app_name):
     
     try:
         command = f'taskkill /F /IM "{process_name}"'
-        # Run the command. check=False because we want to handle non-zero exit codes manually.
         result = subprocess.run(command, shell=True, capture_output=True, text=True, check=False)
         
-        # taskkill exit code 0 means success.
-        # exit code 128 means process not found.
         if result.returncode == 0:
             print(f"✅ Successfully closed '{app_name}' (process: {process_name}).")
             return
-            return
         elif result.returncode == 128 or "not found" in result.stderr.lower():
-            print(f"ℹ️ Application '{app_name}' (process: {process_name}) was not running or could not be found with that name.")
+            print(f"ℹ️ Application '{app_name}' (process: {process_name}) was not running.")
             return f"{app_name} wasn't running, so I couldn't close it."
         else:
-            # Another error occurred
-            print(f"❌ Failed to close '{app_name}'. Command failed with exit code {result.returncode} and error: {result.stderr.strip()}")
+            print(f"❌ Failed to close '{app_name}'. Error: {result.stderr.strip()}")
             return f"Sorry, I ran into an error trying to close {app_name}."
             
     except Exception as e:
         print(f"❌ An unexpected error occurred while trying to close '{app_name}': {e}")
         return f"An unexpected error occurred while trying to close {app_name}."
+
+def _close_app_macos(app_name, app_lower):
+    """macOS-specific app closing logic."""
+    # Dictionary mapping friendly names to app bundle names
+    app_to_bundle = {
+        "safari": "Safari",
+        "chrome": "Google Chrome",
+        "google chrome": "Google Chrome",
+        "firefox": "Firefox",
+        "finder": "Finder",
+        "terminal": "Terminal",
+        "activity monitor": "Activity Monitor",
+        "calculator": "Calculator",
+        "textedit": "TextEdit",
+        "preview": "Preview",
+        "system preferences": "System Preferences",
+        "app store": "App Store",
+        "mail": "Mail",
+        "calendar": "Calendar",
+        "contacts": "Contacts",
+        "notes": "Notes",
+        "reminders": "Reminders",
+        "maps": "Maps",
+        "photos": "Photos",
+        "facetime": "FaceTime",
+        "messages": "Messages",
+        "vscode": "Visual Studio Code",
+        "visual studio code": "Visual Studio Code",
+        "discord": "Discord",
+        "slack": "Slack",
+        "spotify": "Spotify",
+    }
+    
+    bundle_name = app_to_bundle.get(app_lower, app_name)
+    
+    try:
+        # Use AppleScript to quit the application gracefully
+        script = f'tell application "{bundle_name}" to quit'
+        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print(f"✅ Successfully closed '{app_name}' via AppleScript.")
+            return
+        else:
+            print(f"ℹ️ AppleScript failed for '{app_name}': {result.stderr.strip()}")
+            
+    except Exception as e:
+        print(f"ℹ️ AppleScript method failed for '{app_name}': {e}")
+    
+    # Fallback: Try to kill the process using pkill
+    try:
+        process_name = bundle_name.lower().replace(' ', '')
+        result = subprocess.run(['pkill', '-f', process_name], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print(f"✅ Successfully killed process for '{app_name}'.")
+            return
+        else:
+            print(f"ℹ️ No running process found for '{app_name}'.")
+            return f"{app_name} wasn't running, so I couldn't close it."
+            
+    except Exception as e:
+        print(f"❌ Failed to close '{app_name}': {e}")
+        return f"Sorry, I couldn't close {app_name}."
+
+def _close_app_linux(app_name, app_lower):
+    """Linux-specific app closing logic."""
+    # Dictionary mapping friendly names to process names
+    app_to_process = {
+        "firefox": "firefox",
+        "chrome": "chrome",
+        "google chrome": "chrome",
+        "chromium": "chromium",
+        "file manager": "nautilus",
+        "files": "nautilus",
+        "nautilus": "nautilus",
+        "terminal": "gnome-terminal",
+        "calculator": "gnome-calculator",
+        "text editor": "gedit",
+        "gedit": "gedit",
+        "code": "code",
+        "vscode": "code",
+        "visual studio code": "code",
+        "gimp": "gimp",
+        "libreoffice": "libreoffice",
+        "writer": "libreoffice",
+        "calc": "libreoffice",
+        "impress": "libreoffice",
+        "thunderbird": "thunderbird",
+        "vlc": "vlc",
+        "system monitor": "gnome-system-monitor",
+        "settings": "gnome-control-center",
+        "software": "gnome-software",
+        "discord": "discord",
+        "slack": "slack",
+        "spotify": "spotify",
+    }
+    
+    process_name = app_to_process.get(app_lower)
+    
+    if not process_name:
+        # Try various name variations
+        process_variations = [
+            app_lower,
+            app_lower.replace(' ', '-'),
+            app_lower.replace(' ', '_'),
+            app_lower.replace(' ', ''),
+        ]
+        process_name = process_variations[0]  # Start with the first variation
+    else:
+        process_variations = [process_name]
+    
+    # Try to close gracefully first (SIGTERM)
+    for variation in process_variations:
+        try:
+            result = subprocess.run(['pkill', '-f', variation], capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"✅ Successfully sent SIGTERM to '{app_name}' (process: {variation}).")
+                return
+        except Exception as e:
+            continue
+    
+    # If graceful close didn't work, try force kill (SIGKILL)
+    for variation in process_variations:
+        try:
+            result = subprocess.run(['pkill', '-9', '-f', variation], capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"✅ Successfully force-killed '{app_name}' (process: {variation}).")
+                return
+        except Exception as e:
+            continue
+    
+    # Try using killall as a fallback
+    for variation in process_variations:
+        try:
+            result = subprocess.run(['killall', variation], capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"✅ Successfully killed '{app_name}' via killall (process: {variation}).")
+                return
+        except Exception as e:
+            continue
+    
+    print(f"ℹ️ No running process found for '{app_name}' or unable to terminate it.")
+    return f"{app_name} wasn't running, so I couldn't close it."
 
 def media_play():
     """Presses the play/pause media key to play media."""
@@ -552,3 +867,4 @@ def list_steam_games():
 
 if __name__ == "__main__":
     print("TESTING!")
+    
