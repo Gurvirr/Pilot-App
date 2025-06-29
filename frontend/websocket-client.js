@@ -1,20 +1,20 @@
-// WebSocket client for Jarvis events
+// WebSocket client for Scout events
 // Prevent script from running multiple times
-if (window.jarvisWebSocketLoaded) {
-    console.log('⚠️ JarvisWebSocket script already loaded, skipping...');
+if (window.scoutWebSocketLoaded) {
+    console.log('⚠️ ScoutWebSocket script already loaded, skipping...');
 } else {
-    window.jarvisWebSocketLoaded = true;
-    console.log('📦 Loading JarvisWebSocket script...');
+    window.scoutWebSocketLoaded = true;
+    console.log('📦 Loading ScoutWebSocket script...');
 
-class JarvisWebSocket {
+class ScoutWebSocket {
     constructor(url = 'http://localhost:5000') {
         // Singleton pattern - prevent multiple instances
-        if (JarvisWebSocket.instance) {
-            console.log('⚠️ JarvisWebSocket instance already exists, returning existing instance');
-            return JarvisWebSocket.instance;
+        if (ScoutWebSocket.instance) {
+            console.log('⚠️ ScoutWebSocket instance already exists, returning existing instance');
+            return ScoutWebSocket.instance;
         }
         
-        console.log('🆕 Creating new JarvisWebSocket instance');
+        console.log('🆕 Creating new ScoutWebSocket instance');
         
         this.url = url;
         this.socket = null;
@@ -35,7 +35,7 @@ class JarvisWebSocket {
         };
         
         // Store instance
-        JarvisWebSocket.instance = this;
+        ScoutWebSocket.instance = this;
         
         this.connect();
     }
@@ -73,18 +73,18 @@ class JarvisWebSocket {
         window.socket = this.socket;
         
         // Check if event listeners are already attached
-        if (this.socket._jarvisListenersAttached) {
+        if (this.socket._scoutListenersAttached) {
             console.log('⚠️ Socket event listeners already attached, skipping...');
             return;
         }
         
         // Mark as having listeners attached
-        this.socket._jarvisListenersAttached = true;
+        this.socket._scoutListenersAttached = true;
         
         console.log('🔗 Attaching WebSocket event listeners...');
         
         this.socket.on('connect', () => {
-            console.log('Connected to Jarvis WebSocket');
+            console.log('Connected to Scout WebSocket');
             this.isConnected = true;
             this.retryCount = 0;
             this.updateState('idle');
@@ -93,7 +93,7 @@ class JarvisWebSocket {
             if (window.messageLogger) {
                 window.messageLogger.addMessage({
                     type: 'connected',
-                    text: 'Connected to Jarvis WebSocket Server',
+                    text: 'Connected to Scout WebSocket Server',
                     timestamp: Date.now() / 1000,
                     source: 'SYSTEM'
                 });
@@ -101,7 +101,7 @@ class JarvisWebSocket {
         });
         
         this.socket.on('disconnect', () => {
-            console.log('Disconnected from Jarvis WebSocket');
+            console.log('Disconnected from Scout WebSocket');
             this.isConnected = false;
             this.scheduleReconnect();
             
@@ -109,16 +109,16 @@ class JarvisWebSocket {
             if (window.messageLogger) {
                 window.messageLogger.addMessage({
                     type: 'error',
-                    text: 'Disconnected from Jarvis WebSocket Server',
+                    text: 'Disconnected from Scout WebSocket Server',
                     timestamp: Date.now() / 1000,
                     source: 'SYSTEM'
                 });
             }
         });
         
-        this.socket.on('jarvis_event', (data) => {
-            console.log('🎯 jarvis_event received by socket:', this.socket.id || 'unknown');
-            this.handleJarvisEvent(data);
+        this.socket.on('scout_event', (data) => {
+            console.log('🎯 scout_event received by socket:', this.socket.id || 'unknown');
+            this.handleScoutEvent(data);
         });
         
         this.socket.on('connect_error', (error) => {
@@ -129,8 +129,8 @@ class JarvisWebSocket {
         console.log('✅ WebSocket event listeners attached');
     }
     
-    handleJarvisEvent(data) {
-        console.log('Jarvis event received:', data);
+    handleScoutEvent(data) {
+        console.log('Scout event received:', data);
         
         // Broadcast message to appropriate view using view manager
         if (window.viewManager) {
@@ -151,8 +151,8 @@ class JarvisWebSocket {
                 this.showMessage(this.lastMessage);
                 break;
                 
-            case 'jarvis_response':
-                this.showMessage(data.text, 'jarvis');
+            case 'scout_response':
+                this.showMessage(data.text, 'scout');
                 break;
                 
             case 'action_start':
@@ -195,10 +195,10 @@ class JarvisWebSocket {
         const { hologram, centerVisualizer, cornerBoxes } = this.visualElements;
         
         // Remove all state classes
-        document.body.classList.remove('jarvis-idle', 'jarvis-active', 'jarvis-processing', 'jarvis-hidden');
+        document.body.classList.remove('scout-idle', 'scout-active', 'scout-processing', 'scout-hidden');
         
         // Add current state class
-        document.body.classList.add(`jarvis-${this.currentState}`);
+        document.body.classList.add(`scout-${this.currentState}`);
         
         switch (this.currentState) {
             case 'active':
@@ -244,7 +244,7 @@ class JarvisWebSocket {
     }
       showMessage(message, type = 'user') {
         // Display the recognized message (could be used for debugging or UI feedback)
-        console.log(`Jarvis ${type}:`, message);
+        console.log(`Scout ${type}:`, message);
         
         // You could add a message display element here if desired
         // For now, we'll just update the title temporarily
@@ -252,8 +252,8 @@ class JarvisWebSocket {
         let titlePrefix = '';
         
         switch (type) {
-            case 'jarvis':
-                titlePrefix = 'Jarvis: ';
+            case 'scout':
+                titlePrefix = 'Scout: ';
                 break;
             case 'system':
                 titlePrefix = 'System: ';
@@ -273,7 +273,7 @@ class JarvisWebSocket {
     
     hideVisuals() {
         // Trigger hide animations
-        console.log('Jarvis action completed');
+        console.log('Scout action completed');
     }
     
     scheduleReconnect() {
@@ -317,17 +317,17 @@ const stateStyles = `
             100% { transform: scale(1); }
         }
         
-        .jarvis-active .corner-box {
+        .scout-active .corner-box {
             border-color: rgba(0, 255, 0, 0.8) !important;
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
         }
         
-        .jarvis-processing .corner-box {
+        .scout-processing .corner-box {
             border-color: rgba(255, 165, 0, 0.8) !important;
             box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
         }
         
-        .jarvis-hidden .corner-box {
+        .scout-hidden .corner-box {
             border-color: rgba(255, 255, 255, 0.3) !important;
             box-shadow: none;
         }
@@ -338,7 +338,7 @@ const stateStyles = `
 document.head.insertAdjacentHTML('beforeend', stateStyles);
 
 // Initialize WebSocket connection when DOM is ready
-let jarvisWS = null;
+let scoutWS = null;
 let initializationCount = 0;
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -346,7 +346,7 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log(`🚀 DOMContentLoaded event #${initializationCount}`);
     
     // Prevent multiple instances
-    if (jarvisWS) {
+    if (scoutWS) {
         console.log('⚠️ WebSocket already initialized, skipping...');
         return;
     }
@@ -359,17 +359,17 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Wait a bit for other scripts to load, especially message logger
     setTimeout(() => {
-        console.log('🔌 Initializing JarvisWebSocket...');
-        jarvisWS = new JarvisWebSocket();
+        console.log('🔌 Initializing ScoutWebSocket...');
+        scoutWS = new ScoutWebSocket();
         
         // Make it globally accessible for debugging
-        window.jarvisWS = jarvisWS;
+        window.scoutWS = scoutWS;
         
         // Add initial connection message to logger
         if (window.messageLogger) {
             window.messageLogger.addMessage({
                 type: 'system',
-                text: 'Attempting to connect to Jarvis WebSocket...',
+                text: 'Attempting to connect to Scout WebSocket...',
                 timestamp: Date.now() / 1000,
                 source: 'SYSTEM'
             });
@@ -393,9 +393,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
-    if (jarvisWS) {
-        jarvisWS.disconnect();
+    if (scoutWS) {
+        scoutWS.disconnect();
     }
 });
 
-} // End of jarvisWebSocketLoaded check
+} // End of scoutWebSocketLoaded check

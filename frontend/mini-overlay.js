@@ -252,91 +252,64 @@ class MiniOverlay {
                     border-left: 2px solid rgba(0, 170, 255, 0.3);
                     animation: miniMessageAppear 0.2s ease-in;
                 }
-                
+
                 @keyframes miniMessageAppear {
-                    from { opacity: 0; transform: translateX(10px); }
-                    to { opacity: 1; transform: translateX(0); }
+                    from { opacity: 0; transform: translateY(5px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
-                
+
                 .mini-message.user {
                     border-left-color: #00ff88;
                     color: #ffffff;
                 }
                 
-                .mini-message.jarvis {
+                .mini-message.scout {
                     border-left-color: #ff6b00;
                     color: #ffcc99;
                 }
                 
                 .mini-message.system {
                     border-left-color: #00aaff;
-                    color: #99ccff;
+                    color: #99ddff;
                 }
                 
                 .mini-message.error {
                     border-left-color: #ff4444;
-                    color: #ffaaaa;
+                    color: #ffcccc;
                     background: rgba(255, 68, 68, 0.1);
                 }
                 
                 .mini-message.active {
                     border-left-color: #ffff00;
-                    color: #ffffaa;
+                    color: #ffffcc;
                     background: rgba(255, 255, 0, 0.1);
-                }
-                
-                .mini-message-time {
-                    color: rgba(255, 255, 255, 0.4);
-                    font-size: 8px;
-                    margin-right: 6px;
-                }
-                
-                .mini-message-text {
-                    color: inherit;
                 }
             </style>
         `;
-        
         document.head.insertAdjacentHTML('beforeend', styles);
     }
     
     show() {
-        if (this.container) {
-            this.container.classList.remove('hidden');
-            this.isVisible = true;
-        }
+        this.container.classList.remove('hidden');
+        this.isVisible = true;
     }
     
     hide() {
-        if (this.container) {
-            this.container.classList.add('hidden');
-            this.isVisible = false;
-        }
+        this.container.classList.add('hidden');
+        this.isVisible = false;
     }
     
     toggle() {
-        if (this.isVisible) {
-            this.hide();
-        } else {
-            this.show();
-        }
+        this.isVisible ? this.hide() : this.show();
     }
     
     setState(newState) {
-        if (this.state !== newState) {
-            this.state = newState;
-            this.updateRingVisual();
-        }
+        this.state = newState;
+        this.updateRingVisual();
     }
     
     updateRingVisual() {
-        if (!this.ring) return;
-        
-        // Remove all state classes
-        this.ring.classList.remove('active', 'processing', 'idle');
-        
-        // Add current state class
-        this.ring.classList.add(this.state);
+        this.ring.className = `mini-ring ${this.state}`;
     }
     
     addMessage(data) {
@@ -363,12 +336,9 @@ class MiniOverlay {
             this.setState('active');
         } else if (data.type === 'hidden') {
             this.setState('idle');
-        } else if (data.type === 'message' || data.type === 'jarvis_response') {
+        } else if (data.type === 'message' || data.type === 'scout_response') {
             this.setState('processing');
         }
-        
-        // Auto-scroll to bottom
-        this.scrollToBottom();
     }
     
     formatMessage(data) {
@@ -384,8 +354,8 @@ class MiniOverlay {
             case 'message':
                 prefix = 'USER: ';
                 break;
-            case 'jarvis_response':
-                prefix = 'JARVIS: ';
+            case 'scout_response':
+                prefix = 'SCOUT: ';
                 break;
             case 'active':
                 prefix = 'ACTIVE ';
@@ -408,7 +378,7 @@ class MiniOverlay {
         if (type === 'error') return 'error';
         if (type === 'active') return 'active';
         if (type === 'message') return 'user';
-        if (type === 'jarvis_response') return 'jarvis';
+        if (type === 'scout_response') return 'scout';
         return 'system';
     }
     
@@ -416,11 +386,12 @@ class MiniOverlay {
         const content = document.getElementById('mini-log-content');
         if (!content) return;
         
-        const messageElement = document.createElement('div');
-        messageElement.className = `mini-message ${messageClass}`;
-        messageElement.textContent = messageText;
+        const messageEl = document.createElement('div');
+        messageEl.className = `mini-message ${messageClass}`;
+        messageEl.textContent = messageText;
         
-        content.appendChild(messageElement);
+        content.appendChild(messageEl);
+        this.scrollToBottom();
     }
     
     scrollToBottom() {
@@ -434,24 +405,10 @@ class MiniOverlay {
         this.messages = [];
         const content = document.getElementById('mini-log-content');
         if (content) {
-            content.innerHTML = '<div class="mini-message system">Log cleared</div>';
+            content.innerHTML = '<div class="mini-message">Log cleared</div>';
         }
     }
 }
 
-// Global mini overlay instance
-let miniOverlay = null;
-
-// Initialize when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        miniOverlay = new MiniOverlay();
-        window.miniOverlay = miniOverlay; // Make it globally accessible
-        console.log('Mini overlay initialized');
-    }, 300);
-});
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = MiniOverlay;
-}
+// Initialize when the script loads
+window.miniOverlay = new MiniOverlay();

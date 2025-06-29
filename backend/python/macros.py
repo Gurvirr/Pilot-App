@@ -461,15 +461,12 @@ def type_ai_message(context: str = "general", delay: float = 0.05, team_chat: bo
 
 # Example usage
 if __name__ == "__main__":
-    print("Macro Manager Demo")
-    print("Available functions:")
-    print("- afk(duration_minutes=30, movement_interval=30)")
-    print("- stop_afk()")
-    print("- type_chat(message, delay=0.05)")
-    print("- spam_chat(message, count=5, interval=1.0)")
-    print("- type_csgo_chat(message, delay=0.05, team_chat=True)")
-    print("- type_ai_message(context='general', delay=0.05, team_chat=True)")
+    print("Testing macros...")
+    time.sleep(2)
     
-    # Demo
-    print("\nDemo: Adding custom message and typing it")
-    type_chat("Hello from Jarvis!")
+    # Test typing in chat
+    type_chat("Hello from Scout!")
+    time.sleep(2)
+    
+    # Test spamming chat
+    spam_chat("This is a test", count=3, interval=0.5)

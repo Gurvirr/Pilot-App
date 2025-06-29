@@ -70,7 +70,7 @@ class Recipe(BaseModel):
     recipe_name: str
     ingredients: list[str]
 
-def jarvis_query(prompt, multiple_actions=False):
+def scout_query(prompt, multiple_actions=False):
     try:
         # Choose schema based on whether we want multiple actions
         if multiple_actions:
@@ -101,15 +101,15 @@ def jarvis_query(prompt, multiple_actions=False):
         return f"Error: {e}"
 
 
-# def handle_jarvis_command(prompt):
+# def handle_scout_command(prompt):
 #     if "clip" in prompt:
 #         return "[Mock] Clipping last 30 seconds..."
 #     elif "make fun" in prompt:
 #         return "[] Roasting user's stats..."
 #     elif "dox" in prompt:
-#         return "Nope. That's not allowed. jarvis draws the line at doxing."
+#         return "Nope. That's not allowed. scout draws the line at doxing."
 #     else:
-#         return jarvis_query(prompt)
+#         return scout_query(prompt)
 
 
 def extract_response(user_prompt, multiple_actions=False):
@@ -120,7 +120,7 @@ def extract_response(user_prompt, multiple_actions=False):
     
     prompt = (
         f"""
-        You are JARVIS, a helpful AI assistant. Your goal is to map the user's request to a specific action and its parameters.
+        You are Scout, a helpful AI assistant. Your goal is to map the user's request to a specific action and its parameters.
         The user said: '{user_prompt}'.
         
         You MUST respond in the requested JSON format.
@@ -137,7 +137,7 @@ def extract_response(user_prompt, multiple_actions=False):
         Choose the best intent and respond.
         """
     )
-    response_dict = jarvis_query(prompt) 
+    response_dict = scout_query(prompt) 
     return response_dict
 
 def execute_action(intent, context):
@@ -219,8 +219,8 @@ if __name__ == "__main__":
 
 
 
-def jarvis_do(prompt, multiple_actions=True):
-    print(f"Jarvis: {prompt}")
+def scout_do(prompt, multiple_actions=True):
+    print(f"Scout: {prompt}")
     
     # Import socketio here to avoid circular imports
     try:
@@ -238,23 +238,23 @@ def jarvis_do(prompt, multiple_actions=True):
         threading.Thread(target=speak, args=(f"Sorry, I had an issue: {response}",), daemon=True).start()
         return
     
-    # Send jarvis response to WebSocket
+    # Send scout response to WebSocket
     if socketio and response and response.get("description"):
-        socketio.emit('jarvis_event', {
-            'type': 'jarvis_response',
+        socketio.emit('scout_event', {
+            'type': 'scout_response',
             'text': response["description"],
             'timestamp': time.time(),
-            'source': 'jarvis',
+            'source': 'scout',
             'intent': response.get("intent", "unknown")
         })
 
-    # Speak the description of what Jarvis is about to do (non-blocking)
+    # Speak the description of what Scout is about to do (non-blocking)
     if response and response.get("description"):
         threading.Thread(target=speak, args=(response["description"],), daemon=True).start()
     
     # Send action start event
     if socketio and response:
-        socketio.emit('jarvis_event', {
+        socketio.emit('scout_event', {
             'type': 'action_start',
             'text': f"Executing: {response.get('intent', 'unknown')}",
             'timestamp': time.time(),
@@ -267,7 +267,7 @@ def jarvis_do(prompt, multiple_actions=True):
 
     # Send action result to WebSocket
     if socketio and feedback:
-        socketio.emit('jarvis_event', {
+        socketio.emit('scout_event', {
             'type': 'action_result',
             'text': feedback,
             'timestamp': time.time(),

@@ -16,7 +16,7 @@ def speech_to_text_loop():
     CHANNELS = 1
     BLOCKSIZE = 512
     DTYPE = 'int16'
-    TRIGGER_WORD = "jarvis"
+    TRIGGER_WORD = "scout"
     VAD_MIN_SILENCE_DURATION_MS = 500 # ms of silence to mark end of speech
     VAD_THRESHOLD = 0.5 # VAD confidence threshold
     
