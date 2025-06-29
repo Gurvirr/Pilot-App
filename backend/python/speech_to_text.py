@@ -9,14 +9,14 @@ def speech_to_text_loop():
     Real-time speech to text loop using faster-whisper and Silero VAD.
     """
     # --- Configuration ---
-    MODEL_SIZE = "small.en"  # or "small.en", "base.en", "medium.en", "large-v2", etc.
+    MODEL_SIZE = "tiny.en"  # or "small.en", "base.en", "medium.en", "large-v2", etc.
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     COMPUTE_TYPE = "float16" if torch.cuda.is_available() else "int8"
     SAMPLERATE = 16000
     CHANNELS = 1
     BLOCKSIZE = 512
     DTYPE = 'int16'
-    TRIGGER_WORD = "jarvis"
+    TRIGGER_WORD = "scout"
     VAD_MIN_SILENCE_DURATION_MS = 500 # ms of silence to mark end of speech
     VAD_THRESHOLD = 0.5 # VAD confidence threshold
     
