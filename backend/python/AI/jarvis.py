@@ -55,22 +55,6 @@ class MultipleActionsModel(BaseModel):
             }
         }
 
-class MultipleActionsModel(BaseModel):
-    actions: List[ActionModel] = Field(..., description="List of actions to perform")
-    overall_description: str = Field(..., description="Overall response to the user describing what actions will be performed")
-    execution_order: Optional[List[int]] = Field(None, description="Order in which actions should be executed (0-based indices)")
-
-    class Config:
-        model_config = {
-            "json_schema_extra": {
-                "propertyOrdering": [
-                    "actions",
-                    "overall_description", 
-                    "execution_order"
-                ]
-            }
-        }
-
 class RootModel(BaseModel):
     action: ActionModel
 
@@ -96,7 +80,7 @@ def jarvis_query(prompt, multiple_actions=False):
         
         # Generate structured output
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -134,54 +118,23 @@ def extract_response(user_prompt, multiple_actions=False):
     print(available_actions)
     actions_str = ", ".join(available_actions)
     
-    # Add macro-specific commands to the prompt
-    macro_commands = [
-        "be afk", "go afk", "afk mode", "stay afk",
-        "move around", "move mouse", "random movement",
-        "type in chat", "send message", "chat message",
-        "spam chat", "spam message", "custom message",
-        "csgo chat", "team chat", "rush b", "rush a",
-        "ai message", "generate message", "smart chat",
-        "steam games", "list games", "what games", "show games"
-    ]
-    
     prompt = (
         f"""
-        YOU, JARVIS are an AI assistant for gaming and other productivity tasks.
-
-        Available actions you can perform: {actions_str}
-
-        You also have access to macro commands for gaming:
-        - "be afk" or "go afk" → use intent: "afk" 
-        - "move around" or "move mouse" → use intent: "afk" with shorter duration
-        - "type in chat" or "send message" → use intent: "type_chat"
-        - "spam chat" or "spam message" → use intent: "spam_chat"
-        - "custom message" → use intent: "type_chat" with custom text
-        - "csgo chat" or "team chat" → use intent: "type_chat" with team_chat=True
-        - "ai message" or "generate message" → use intent: "type_chat" with AI-generated text
-        - "rush b", "rush a", "rotate" → use intent: "type_chat" with CSGO-specific messages
-        - "steam games", "list games", "what games" → use intent: "list_steam_games"
-
-        For Steam games, you can just say the game name and it will try to launch it via Steam.
-        Examples: "Counter-Strike", "Minecraft", "GTA V", etc.
-
-        You must map the user's request to one of the available intents. Here are rules to follow:
-        - For generic media commands: Use `media_play` for "resume" or "unpause". Use `media_pause` for "stop the song" or "pause". Use `media_next` for "next song" or "skip".
-        - For application commands: Use `open_app` or `close_app` and specify the `app_name`. For example, "kill chrome" maps to `intent: close_app` and `app_name: "chrome"`.
-        - For screenshots: Use the `screenshot` intent.
-        - For taking a picture: Use the `take_picture` intent if the user wants to use their camera.
-        - For web searches: Use `search_web` and provide the `search_query`. For example, "search for cute puppies" maps to `intent: search_web` and `search_query: "cute puppies"`.
-        - For opening websites: Use `open_website` and provide the `website_name`. Examples: "open youtube" or "go to reddit.com".
-
-        The SST doesn't work that well so make sure the app you plan to run is an actual app, not something like "modify" because thats actually spotify.
-        The description is actually what you are going to say back to the user, so stay in character and don't make it too long since we have to respond quickly.
+        You are JARVIS, a helpful AI assistant. Your goal is to map the user's request to a specific action and its parameters.
+        The user said: '{user_prompt}'.
         
-        The description is what you will say to the user. Keep it short.
+        You MUST respond in the requested JSON format.
         
-        User said: '{user_prompt}'. 
-        User wants to perform an action. Output the action details in the structured format, don't include non-applicable tags.
+        Available actions: {actions_str}.
         
-        Choose the most appropriate intent from: {actions_str}
+        Here are some rules:
+        - For media: use `media_play`, `media_pause`, `media_next`, `media_previous`.
+        - For apps: use `open_app` or `close_app` with `app_name`.
+        - For web: use `open_website` with `website_name` or `search_web` with `search_query`.
+        - The 'description' field is your spoken response to the user. Keep it brief.
+        - Be mindful of speech-to-text errors (e.g., "modify" might be "spotify").
+        
+        Choose the best intent and respond.
         """
     )
     response_dict = jarvis_query(prompt) 
@@ -195,9 +148,9 @@ def execute_action(intent, context):
         actions.screenshot()
         return
     elif intent == "open_app":
-        return actions.open_app(context["app_name"])
+        return actions.open_app(context.get("app_name"))
     elif intent == "close_app":
-        return actions.close_app(context["app_name"])
+        return actions.close_app(context.get("app_name"))
     elif intent == "media_play":
         return actions.media_play()
     elif intent == "media_pause":
@@ -209,9 +162,9 @@ def execute_action(intent, context):
     elif intent == "take_picture":
         return actions.take_picture()
     elif intent == "open_website":
-        return actions.open_website(context["website_name"])
+        return actions.open_website(context.get("website_name"))
     elif intent == "search_web":
-        return actions.search_web(context["search_query"])
+        return actions.search_web(context.get("search_query"))
     elif intent == "list_steam_games":
         return actions.list_steam_games()
     elif intent == "afk":
@@ -219,9 +172,9 @@ def execute_action(intent, context):
     elif intent == "stop_afk":
         return actions.stop_afk()
     elif intent == "type_chat":
-        return actions.type_chat(context["text_message"])
+        return actions.type_chat(context.get("text_message"))
     elif intent == "spam_chat":
-        return actions.spam_chat(context["text_message"])
+        return actions.spam_chat(context.get("text_message"))
     elif intent == "move_around":
         return actions.afk(duration_minutes=1, movement_interval=1)
     else:
@@ -278,6 +231,12 @@ def jarvis_do(prompt, multiple_actions=True):
         import time
     
     response = extract_response(prompt)
+    
+    if not isinstance(response, dict):
+        print(f"Error processing command: {response}")
+        # Optionally, speak the error
+        threading.Thread(target=speak, args=(f"Sorry, I had an issue: {response}",), daemon=True).start()
+        return
     
     # Send jarvis response to WebSocket
     if socketio and response and response.get("description"):
