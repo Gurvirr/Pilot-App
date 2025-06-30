@@ -161,6 +161,8 @@ def execute_action(intent, context):
         return actions.media_previous()
     elif intent == "take_picture":
         return actions.take_picture()
+    elif intent == "play_demo":
+        return actions.play_demo()
     elif intent == "open_website":
         return actions.open_website(context.get("website_name"))
     elif intent == "search_web":

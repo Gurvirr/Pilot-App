@@ -45,7 +45,8 @@ def action_list():
         "quit_game",
         "take_picture",
         "open_website",
-        "search_web"
+        "search_web",
+        "play_demo"
     ]
 
 def screenshot():
@@ -105,6 +106,41 @@ def take_picture():
 
     # Release the camera
     cap.release()
+
+def play_demo():
+    """Plays a demo video in fullscreen."""
+    # !!! IMPORTANT !!!
+    # Make sure to place your demo video file at the specified path.
+    # The path should be relative to the 'backend' directory.
+    video_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "captures", "videos", "demo.mp4")
+
+    if not os.path.exists(video_path):
+        print(f"❌ Demo video not found at {video_path}")
+        return "Sorry, I couldn't find the demo video file."
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("❌ Error opening video file")
+        return "Sorry, I couldn't open the demo video."
+
+    cv2.namedWindow('Demo', cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty('Demo', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        cv2.imshow('Demo', frame)
+        
+        # Press 'q' to exit fullscreen
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            break
+            
+    cap.release()
+    cv2.destroyAllWindows()
+    print("✅ Demo finished.")
+    return
 
 def open_website(website_name: str):
     """Opens a website in the default browser."""
