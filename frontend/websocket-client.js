@@ -29,7 +29,6 @@ class PilotWebSocket {
         
         // Visual elements that will react to state changes
         this.visualElements = {
-            hologram: document.querySelector('.hologram-container'),
             centerVisualizer: document.querySelector('.center-visualizer'),
             cornerBoxes: document.querySelectorAll('.corner-box')
         };
@@ -192,7 +191,7 @@ class PilotWebSocket {
     
     updateVisualState() {
         // Update visual elements based on current state
-        const { hologram, centerVisualizer, cornerBoxes } = this.visualElements;
+        const { centerVisualizer, cornerBoxes } = this.visualElements;
         
         // Remove all state classes
         document.body.classList.remove('pilot-idle', 'pilot-active', 'pilot-processing', 'pilot-hidden');
@@ -203,7 +202,6 @@ class PilotWebSocket {
         switch (this.currentState) {
             case 'active':
                 if (centerVisualizer) centerVisualizer.style.opacity = '1';
-                if (hologram) hologram.style.opacity = '1';
                 break;
                 
             case 'processing':
@@ -218,7 +216,6 @@ class PilotWebSocket {
                     centerVisualizer.style.opacity = '0.3';
                     centerVisualizer.style.transform = 'scale(0.8)';
                 }
-                if (hologram) hologram.style.opacity = '0.5';
                 break;
                 
             case 'idle':
@@ -227,7 +224,6 @@ class PilotWebSocket {
                     centerVisualizer.style.opacity = '0.7';
                     centerVisualizer.style.transform = 'scale(1)';
                 }
-                if (hologram) hologram.style.opacity = '0.8';
                 break;
         }
     }
@@ -299,43 +295,6 @@ class PilotWebSocket {
         this.isConnected = false;
     }
 }
-
-// Add CSS for state transitions and animations
-const stateStyles = `
-    <style>
-        .center-visualizer {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out !important;
-        }
-        
-        .hologram-container {
-            transition: opacity 0.3s ease-in-out !important;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        
-        .pilot-active .corner-box {
-            border-color: rgba(0, 255, 0, 0.8) !important;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-        }
-        
-        .pilot-processing .corner-box {
-            border-color: rgba(255, 165, 0, 0.8) !important;
-            box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
-        }
-        
-        .pilot-hidden .corner-box {
-            border-color: rgba(255, 255, 255, 0.3) !important;
-            box-shadow: none;
-        }
-    </style>
-`;
-
-// Inject styles
-document.head.insertAdjacentHTML('beforeend', stateStyles);
 
 // Initialize WebSocket connection when DOM is ready
 let pilotWS = null;

@@ -150,27 +150,6 @@ body.full-view .center-visualizer {
     transform: translate(-50%, 0);
 }
 
-/* Iron Man Hologram Styles */
-.hologram-container {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%); /* Center the hologram */
-    width: 450px; /* Increased width */
-    height: 550px; /* Significantly increased height */
-    pointer-events: none;
-    z-index: 10;
-    transition: all 0.3s ease-in-out;
-}
-
-#hologram-canvas {
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    overflow: hidden;
-    background: transparent;
-}
-
 canvas {
     width: 100%;
     height: 100%;
@@ -212,16 +191,6 @@ canvas {
     color: white;
     cursor: pointer;
     border-radius: 5px;
-}
-
-.hologram-container.focused {
-    width: 200px; /* Made smaller */
-    height: 200px; /* Made smaller */
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: auto;
-    right: auto;
 }
 
 /* Add header styling for bottom-left box */
