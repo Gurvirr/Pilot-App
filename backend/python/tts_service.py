@@ -20,7 +20,8 @@ class TTSService:
         self.current_audio_file = None
         
         # Your current voice settings
-        self.voice_id = 'ErXwobaYiN019PkySvjV'  # Antoni
+        self.voice_id = 'JBFqnCBsd6RMkjVDRZzb'  # George (default)
+        # self.voice_id = 'Xb7hH8MSUJpSbSDYk0k2'  # Alice (alternative)
         self.base_url = 'https://api.elevenlabs.io/v1'
         
         # WebSocket reference (will be set by server)
