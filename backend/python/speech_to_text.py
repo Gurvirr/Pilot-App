@@ -88,18 +88,21 @@ def speech_to_text_loop():
                             full_speech,
                             language="en",
                             beam_size=5, # 1 for fastest
-                            condition_on_previous_text=True
+                            condition_on_previous_text=True,
+                            initial_prompt="Pilot is the wake word."
                         )
                         
                         text = "".join(segment.text for segment in segments)
                         
                         print(f"Recognized: {text}")
 
-                        if TRIGGER_WORD in text.lower():
-                            start_index = text.lower().find(TRIGGER_WORD)
-                            command = text[start_index:]
+                        clean_text = text.lower().strip()
+                        if clean_text.startswith(TRIGGER_WORD):
+                            # Find the start of the command, which is after the trigger word
+                            command_start_pos = len(TRIGGER_WORD)
+                            command = text.strip()[command_start_pos:].strip()
                             
-                            if len(command.strip()) > len(TRIGGER_WORD):
+                            if command: # ensure there's an actual command
                                 vad_iterator.reset_states()
                                 print(f"Command found: {command}")
                                 return command
