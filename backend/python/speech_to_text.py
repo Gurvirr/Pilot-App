@@ -96,19 +96,17 @@ def speech_to_text_loop():
                         
                         print(f"Recognized: {text}")
 
-                        clean_text = text.lower().strip()
-                        if clean_text.startswith(TRIGGER_WORD):
-                            # Find the start of the command, which is after the trigger word
-                            command_start_pos = len(TRIGGER_WORD)
-                            command = text.strip()[command_start_pos:].strip()
+                        if TRIGGER_WORD in text.lower():
+                            start_index = text.lower().find(TRIGGER_WORD)
+                            command = text[start_index:]
                             
-                            if command: # ensure there's an actual command
+                            if len(command.strip()) > len(TRIGGER_WORD):
                                 vad_iterator.reset_states()
                                 print(f"Command found: {command}")
                                 return command
                         
                         vad_iterator.reset_states()
-                        print("Listening for speech again...")
+                        print("Listening for speech...")
                         break # break inner loop to reset and listen again
                 else:
                     # Keep collecting if speech started but not ended
