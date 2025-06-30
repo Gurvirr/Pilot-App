@@ -67,16 +67,16 @@ function setupCircularWaveVisualizer(canvasInfo) {
         ctx.scale(dpr, dpr);
     }
 
-    // Function to get current Scout state color
-    function getScoutStateColor() {
-        if (document.body.classList.contains('scout-processing')) {
+    // Function to get current Pilot state color
+    function getPilotStateColor() {
+        if (document.body.classList.contains('pilot-processing')) {
             return {
                 hue: 30, // Orange
                 saturation: 100,
                 baseLightness: 50,
                 glowColor: 'hsla(30, 100%, 70%, 0.8)'
             };
-        } else if (document.body.classList.contains('scout-active')) {
+        } else if (document.body.classList.contains('pilot-active')) {
             return {
                 hue: 120, // Green
                 saturation: 100,
@@ -198,8 +198,8 @@ function setupCircularWaveVisualizer(canvasInfo) {
         // Calculate overall audio intensity
         const totalAudioIntensity = smoothedAudioData.reduce((sum, val) => sum + val, 0) / smoothedAudioData.length;
 
-        // Get current Scout state color
-        const stateColor = getScoutStateColor();
+        // Get current Pilot state color
+        const stateColor = getPilotStateColor();
 
         // Draw the circular wave
         ctx.beginPath();

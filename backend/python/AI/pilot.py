@@ -70,7 +70,7 @@ class Recipe(BaseModel):
     recipe_name: str
     ingredients: list[str]
 
-def scout_query(prompt, multiple_actions=False):
+def pilot_query(prompt, multiple_actions=False):
     try:
         # Choose schema based on whether we want multiple actions
         if multiple_actions:
@@ -101,15 +101,15 @@ def scout_query(prompt, multiple_actions=False):
         return f"Error: {e}"
 
 
-# def handle_scout_command(prompt):
+# def handle_pilot_command(prompt):
 #     if "clip" in prompt:
 #         return "[Mock] Clipping last 30 seconds..."
 #     elif "make fun" in prompt:
 #         return "[] Roasting user's stats..."
 #     elif "dox" in prompt:
-#         return "Nope. That's not allowed. scout draws the line at doxing."
+#         return "Nope. That's not allowed. pilot draws the line at doxing."
 #     else:
-#         return scout_query(prompt)
+#         return pilot_query(prompt)
 
 
 def extract_response(user_prompt, multiple_actions=False):
@@ -120,7 +120,7 @@ def extract_response(user_prompt, multiple_actions=False):
     
     prompt = (
         f"""
-        You are Scout, a helpful AI assistant. Your goal is to map the user's request to a specific action and its parameters.
+        You are Pilot, a helpful AI assistant. Your goal is to map the user's request to a specific action and its parameters.
         The user said: '{user_prompt}'.
         
         You MUST respond in the requested JSON format.
@@ -137,7 +137,7 @@ def extract_response(user_prompt, multiple_actions=False):
         Choose the best intent and respond.
         """
     )
-    response_dict = scout_query(prompt) 
+    response_dict = pilot_query(prompt) 
     return response_dict
 
 def execute_action(intent, context):
@@ -219,8 +219,8 @@ if __name__ == "__main__":
 
 
 
-def scout_do(prompt, multiple_actions=True):
-    print(f"Scout: {prompt}")
+def pilot_do(prompt, multiple_actions=True):
+    print(f"Pilot: {prompt}")
     
     # Import socketio here to avoid circular imports
     try:
@@ -238,23 +238,23 @@ def scout_do(prompt, multiple_actions=True):
         threading.Thread(target=speak, args=(f"Sorry, I had an issue: {response}",), daemon=True).start()
         return
     
-    # Send scout response to WebSocket
+    # Send pilot response to WebSocket
     if socketio and response and response.get("description"):
-        socketio.emit('scout_event', {
-            'type': 'scout_response',
+        socketio.emit('pilot_event', {
+            'type': 'pilot_response',
             'text': response["description"],
             'timestamp': time.time(),
-            'source': 'scout',
+            'source': 'pilot',
             'intent': response.get("intent", "unknown")
         })
 
-    # Speak the description of what Scout is about to do (non-blocking)
+    # Speak the description of what Pilot is about to do (non-blocking)
     if response and response.get("description"):
         threading.Thread(target=speak, args=(response["description"],), daemon=True).start()
     
     # Send action start event
     if socketio and response:
-        socketio.emit('scout_event', {
+        socketio.emit('pilot_event', {
             'type': 'action_start',
             'text': f"Executing: {response.get('intent', 'unknown')}",
             'timestamp': time.time(),
@@ -267,7 +267,7 @@ def scout_do(prompt, multiple_actions=True):
 
     # Send action result to WebSocket
     if socketio and feedback:
-        socketio.emit('scout_event', {
+        socketio.emit('pilot_event', {
             'type': 'action_result',
             'text': feedback,
             'timestamp': time.time(),

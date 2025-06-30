@@ -132,7 +132,7 @@ class TTSService:
         """Play audio using system player (fallback)"""
         try:
             # Save to temporary file
-            temp_dir = Path(tempfile.gettempdir()) / "scout-tts"
+            temp_dir = Path(tempfile.gettempdir()) / "pilot-tts"
             temp_dir.mkdir(exist_ok=True)
             
             audio_file = temp_dir / "speech.mp3"

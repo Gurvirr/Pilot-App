@@ -3,7 +3,7 @@ from flask_socketio import SocketIO, emit
 import threading
 import time
 from speech_to_text import speech_to_text_loop
-from AI.scout import scout_do
+from AI.pilot import pilot_do
 from tts_service import tts
 
 import os
@@ -11,23 +11,23 @@ from dotenv import load_dotenv
 from google import genai
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'scout_secret_key'
+app.config['SECRET_KEY'] = 'pilot_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global variables to track the STT loop
 stt_thread = None
 stt_running = False
 
-def initialize_scout():
-    """Initialize Scout AI with API key"""
+def initialize_pilot():
+    """Initialize Pilot AI with API key"""
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY not found in environment variables")
     
-    # Initialize the client in scout module
-    import AI.scout as scout_module
-    scout_module.client = genai.Client(api_key=api_key)
+    # Initialize the client in pilot module
+    import AI.pilot as pilot_module
+    pilot_module.client = genai.Client(api_key=api_key)
     
     # Set WebSocket reference for TTS service
     tts.set_socketio(socketio)
@@ -45,19 +45,19 @@ def stt_worker():
             if recognized_text:
                 print(f"Recognized: {recognized_text}")
                 
-                # Check if this contains the trigger word "scout"
-                if "scout" in recognized_text.lower():
-                    # Send "active" event when scout is triggered
-                    socketio.emit('scout_event', {'type': 'active'})
+                # Check if this contains the trigger word "pilot"
+                if "pilot" in recognized_text.lower():
+                    # Send "active" event when pilot is triggered
+                    socketio.emit('pilot_event', {'type': 'active'})
                 
                 # Send "message" event for all recognized text
-                socketio.emit('scout_event', {'type': 'message', 'text': recognized_text})
+                socketio.emit('pilot_event', {'type': 'message', 'text': recognized_text})
                 
-                # Feed the text into scout_do
-                scout_do(recognized_text)
+                # Feed the text into pilot_do
+                pilot_do(recognized_text)
                 
                 # Send "hidden" event when action is complete
-                socketio.emit('scout_event', {'type': 'hidden'})
+                socketio.emit('pilot_event', {'type': 'hidden'})
                 
         except Exception as e:
             print(f"Error in STT worker: {e}")
@@ -67,7 +67,7 @@ def stt_worker():
 @socketio.on('connect')
 def handle_connect():
     print('Client connected to WebSocket')
-    emit('scout_event', {'type': 'connected', 'message': 'Connected to Scout WebSocket'})
+    emit('pilot_event', {'type': 'connected', 'message': 'Connected to Pilot WebSocket'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -77,7 +77,7 @@ def handle_disconnect():
 @app.route('/')
 def home():
     return jsonify({
-        "message": "Scout Flask Server is running",
+        "message": "Pilot Flask Server is running",
         "stt_status": "running" if stt_running else "stopped"
     })
 
@@ -89,8 +89,8 @@ def start_stt():
         return jsonify({"message": "STT is already running"}), 400
     
     try:
-        # Initialize Scout AI
-        initialize_scout()
+        # Initialize Pilot AI
+        initialize_pilot()
         
         stt_running = True
         stt_thread = threading.Thread(target=stt_worker, daemon=True)
@@ -119,34 +119,34 @@ def status():
         "thread_alive": stt_thread.is_alive() if stt_thread else False
     })
 
-@app.route('/test_scout', methods=['POST'])
-def test_scout():
-    """Test endpoint to manually trigger scout_do with text"""
+@app.route('/test_pilot', methods=['POST'])
+def test_pilot():
+    """Test endpoint to manually trigger pilot_do with text"""
     data = request.get_json()
     if not data or 'text' not in data:
         return jsonify({"error": "Missing 'text' in request body"}), 400
     
     try:
-        initialize_scout()
-        scout_do(data['text'])
-        return jsonify({"message": f"Scout processed: {data['text']}"})
+        initialize_pilot()
+        pilot_do(data['text'])
+        return jsonify({"message": f"Pilot processed: {data['text']}"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    print("Starting Scout Flask Server with WebSocket...")
+    print("Starting Pilot Flask Server with WebSocket...")
     print("Available endpoints:")
     print("  GET  /          - Home page with status")
     print("  POST /start_stt - Start speech-to-text loop")
     print("  POST /stop_stt  - Stop speech-to-text loop")
     print("  GET  /status    - Check STT status")
-    print("  POST /test_scout - Test scout_do with manual text")
+    print("  POST /test_pilot - Test pilot_do with manual text")
     print("  WebSocket events: 'active', 'message', 'hidden'")
     
     # Auto-start STT on server startup (only if not already running)
     if not stt_running:
         try:
-            initialize_scout()
+            initialize_pilot()
             stt_running = True
             stt_thread = threading.Thread(target=stt_worker, daemon=True)
             stt_thread.start()

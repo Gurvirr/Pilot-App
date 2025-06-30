@@ -263,7 +263,7 @@ class MiniOverlay {
                     color: #ffffff;
                 }
                 
-                .mini-message.scout {
+                .mini-message.pilot {
                     border-left-color: #ff6b00;
                     color: #ffcc99;
                 }
@@ -336,7 +336,7 @@ class MiniOverlay {
             this.setState('active');
         } else if (data.type === 'hidden') {
             this.setState('idle');
-        } else if (data.type === 'message' || data.type === 'scout_response') {
+        } else if (data.type === 'message' || data.type === 'pilot_response') {
             this.setState('processing');
         }
     }
@@ -354,8 +354,8 @@ class MiniOverlay {
             case 'message':
                 prefix = 'USER: ';
                 break;
-            case 'scout_response':
-                prefix = 'SCOUT: ';
+            case 'pilot_response':
+                prefix = 'PILOT: ';
                 break;
             case 'active':
                 prefix = 'ACTIVE ';
@@ -378,7 +378,7 @@ class MiniOverlay {
         if (type === 'error') return 'error';
         if (type === 'active') return 'active';
         if (type === 'message') return 'user';
-        if (type === 'scout_response') return 'scout';
+        if (type === 'pilot_response') return 'pilot';
         return 'system';
     }
     

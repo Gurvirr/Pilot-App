@@ -5,7 +5,7 @@ const SystemMonitor = require('./system-monitor');
 const MediaService = require('./media-service');
 const AudioService = require('./audio-service');
 
-console.log('🎬 Starting Scout...');
+console.log('🎬 Starting Pilot...');
 console.log(`📅 Date: ${new Date().toISOString()}`);
 console.log(`🖥️  Platform: ${process.platform}`);
 console.log(`⚡ Electron version: ${process.versions.electron}`);

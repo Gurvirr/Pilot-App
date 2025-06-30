@@ -19,7 +19,7 @@ class AudioService {
         
         try {
             // Create temp directory for audio files
-            this.tempDir = path.join(require('os').tmpdir(), 'scout-audio');
+            this.tempDir = path.join(require('os').tmpdir(), 'pilot-audio');
             await fs.mkdir(this.tempDir, { recursive: true });
             
             // Connect to Python WebSocket server

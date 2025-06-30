@@ -37,7 +37,7 @@ class MessageLogger {
         this.container.className = 'message-log';
         this.container.innerHTML = `
             <div class="message-log-header">
-                <span class="log-title">📡 Scout Terminal</span>
+                <span class="log-title">📡 Pilot Terminal</span>
                 <span class="log-count">0</span>
             </div>
             <div class="message-log-content" id="message-log-content">
@@ -137,7 +137,7 @@ class MessageLogger {
                     border-left-color: #00ff88;
                 }
                 
-                .message-item.scout {
+                .message-item.pilot {
                     border-left-color: #ff6b00;
                 }
                 
@@ -176,7 +176,7 @@ class MessageLogger {
                 }
                 
                 .message-source.user { background-color: rgba(0, 255, 136, 0.2); }
-                .message-source.scout { background-color: rgba(255, 107, 0, 0.2); }
+                .message-source.pilot { background-color: rgba(255, 107, 0, 0.2); }
                 .message-source.system { background-color: rgba(0, 170, 255, 0.2); }
                 .message-source.error { background-color: rgba(255, 68, 68, 0.2); }
                 
@@ -229,10 +229,10 @@ class MessageLogger {
     getSourceFromType(type) {
         const typeMap = {
             'message': 'USER',
-            'scout_response': 'SCOUT',
+            'pilot_response': 'PILOT',
             'action_start': 'SYSTEM',
             'action_result': 'SYSTEM',
-            'active': 'SCOUT',
+            'active': 'PILOT',
             'hidden': 'SYSTEM',
             'error': 'ERROR',
             'connected': 'SYSTEM'
@@ -245,7 +245,7 @@ class MessageLogger {
         if (type === 'error') return 'error';
         if (type === 'active') return 'active';
         if (source === 'user' || source === 'USER') return 'user';
-        if (source === 'scout' || source === 'SCOUT') return 'scout';
+        if (source === 'pilot' || source === 'PILOT') return 'pilot';
         return 'system';
     }
     

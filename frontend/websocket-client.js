@@ -1,20 +1,20 @@
-// WebSocket client for Scout events
+// WebSocket client for Pilot events
 // Prevent script from running multiple times
-if (window.scoutWebSocketLoaded) {
-    console.log('⚠️ ScoutWebSocket script already loaded, skipping...');
+if (window.pilotWebSocketLoaded) {
+    console.log('⚠️ PilotWebSocket script already loaded, skipping...');
 } else {
-    window.scoutWebSocketLoaded = true;
-    console.log('📦 Loading ScoutWebSocket script...');
+    window.pilotWebSocketLoaded = true;
+    console.log('📦 Loading PilotWebSocket script...');
 
-class ScoutWebSocket {
+class PilotWebSocket {
     constructor(url = 'http://localhost:5000') {
         // Singleton pattern - prevent multiple instances
-        if (ScoutWebSocket.instance) {
-            console.log('⚠️ ScoutWebSocket instance already exists, returning existing instance');
-            return ScoutWebSocket.instance;
+        if (PilotWebSocket.instance) {
+            console.log('⚠️ PilotWebSocket instance already exists, returning existing instance');
+            return PilotWebSocket.instance;
         }
         
-        console.log('🆕 Creating new ScoutWebSocket instance');
+        console.log('🆕 Creating new PilotWebSocket instance');
         
         this.url = url;
         this.socket = null;
@@ -35,7 +35,7 @@ class ScoutWebSocket {
         };
         
         // Store instance
-        ScoutWebSocket.instance = this;
+        PilotWebSocket.instance = this;
         
         this.connect();
     }
@@ -73,18 +73,18 @@ class ScoutWebSocket {
         window.socket = this.socket;
         
         // Check if event listeners are already attached
-        if (this.socket._scoutListenersAttached) {
+        if (this.socket._pilotListenersAttached) {
             console.log('⚠️ Socket event listeners already attached, skipping...');
             return;
         }
         
         // Mark as having listeners attached
-        this.socket._scoutListenersAttached = true;
+        this.socket._pilotListenersAttached = true;
         
         console.log('🔗 Attaching WebSocket event listeners...');
         
         this.socket.on('connect', () => {
-            console.log('Connected to Scout WebSocket');
+            console.log('Connected to Pilot WebSocket');
             this.isConnected = true;
             this.retryCount = 0;
             this.updateState('idle');
@@ -93,7 +93,7 @@ class ScoutWebSocket {
             if (window.messageLogger) {
                 window.messageLogger.addMessage({
                     type: 'connected',
-                    text: 'Connected to Scout WebSocket Server',
+                    text: 'Connected to Pilot WebSocket Server',
                     timestamp: Date.now() / 1000,
                     source: 'SYSTEM'
                 });
@@ -101,7 +101,7 @@ class ScoutWebSocket {
         });
         
         this.socket.on('disconnect', () => {
-            console.log('Disconnected from Scout WebSocket');
+            console.log('Disconnected from Pilot WebSocket');
             this.isConnected = false;
             this.scheduleReconnect();
             
@@ -109,16 +109,16 @@ class ScoutWebSocket {
             if (window.messageLogger) {
                 window.messageLogger.addMessage({
                     type: 'error',
-                    text: 'Disconnected from Scout WebSocket Server',
+                    text: 'Disconnected from Pilot WebSocket Server',
                     timestamp: Date.now() / 1000,
                     source: 'SYSTEM'
                 });
             }
         });
         
-        this.socket.on('scout_event', (data) => {
-            console.log('🎯 scout_event received by socket:', this.socket.id || 'unknown');
-            this.handleScoutEvent(data);
+        this.socket.on('pilot_event', (data) => {
+            console.log('🎯 pilot_event received by socket:', this.socket.id || 'unknown');
+            this.handlePilotEvent(data);
         });
         
         this.socket.on('connect_error', (error) => {
@@ -129,8 +129,8 @@ class ScoutWebSocket {
         console.log('✅ WebSocket event listeners attached');
     }
     
-    handleScoutEvent(data) {
-        console.log('Scout event received:', data);
+    handlePilotEvent(data) {
+        console.log('Pilot event received:', data);
         
         // Broadcast message to appropriate view using view manager
         if (window.viewManager) {
@@ -151,8 +151,8 @@ class ScoutWebSocket {
                 this.showMessage(this.lastMessage);
                 break;
                 
-            case 'scout_response':
-                this.showMessage(data.text, 'scout');
+            case 'pilot_response':
+                this.showMessage(data.text, 'pilot');
                 break;
                 
             case 'action_start':
@@ -195,10 +195,10 @@ class ScoutWebSocket {
         const { hologram, centerVisualizer, cornerBoxes } = this.visualElements;
         
         // Remove all state classes
-        document.body.classList.remove('scout-idle', 'scout-active', 'scout-processing', 'scout-hidden');
+        document.body.classList.remove('pilot-idle', 'pilot-active', 'pilot-processing', 'pilot-hidden');
         
         // Add current state class
-        document.body.classList.add(`scout-${this.currentState}`);
+        document.body.classList.add(`pilot-${this.currentState}`);
         
         switch (this.currentState) {
             case 'active':
@@ -244,7 +244,7 @@ class ScoutWebSocket {
     }
       showMessage(message, type = 'user') {
         // Display the recognized message (could be used for debugging or UI feedback)
-        console.log(`Scout ${type}:`, message);
+        console.log(`Pilot ${type}:`, message);
         
         // You could add a message display element here if desired
         // For now, we'll just update the title temporarily
@@ -252,8 +252,8 @@ class ScoutWebSocket {
         let titlePrefix = '';
         
         switch (type) {
-            case 'scout':
-                titlePrefix = 'Scout: ';
+            case 'pilot':
+                titlePrefix = 'Pilot: ';
                 break;
             case 'system':
                 titlePrefix = 'System: ';
@@ -273,7 +273,7 @@ class ScoutWebSocket {
     
     hideVisuals() {
         // Trigger hide animations
-        console.log('Scout action completed');
+        console.log('Pilot action completed');
     }
     
     scheduleReconnect() {
@@ -317,17 +317,17 @@ const stateStyles = `
             100% { transform: scale(1); }
         }
         
-        .scout-active .corner-box {
+        .pilot-active .corner-box {
             border-color: rgba(0, 255, 0, 0.8) !important;
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
         }
         
-        .scout-processing .corner-box {
+        .pilot-processing .corner-box {
             border-color: rgba(255, 165, 0, 0.8) !important;
             box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
         }
         
-        .scout-hidden .corner-box {
+        .pilot-hidden .corner-box {
             border-color: rgba(255, 255, 255, 0.3) !important;
             box-shadow: none;
         }
@@ -338,7 +338,7 @@ const stateStyles = `
 document.head.insertAdjacentHTML('beforeend', stateStyles);
 
 // Initialize WebSocket connection when DOM is ready
-let scoutWS = null;
+let pilotWS = null;
 let initializationCount = 0;
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -346,7 +346,7 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log(`🚀 DOMContentLoaded event #${initializationCount}`);
     
     // Prevent multiple instances
-    if (scoutWS) {
+    if (pilotWS) {
         console.log('⚠️ WebSocket already initialized, skipping...');
         return;
     }
@@ -359,17 +359,17 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Wait a bit for other scripts to load, especially message logger
     setTimeout(() => {
-        console.log('🔌 Initializing ScoutWebSocket...');
-        scoutWS = new ScoutWebSocket();
+        console.log('🔌 Initializing PilotWebSocket...');
+        pilotWS = new PilotWebSocket();
         
         // Make it globally accessible for debugging
-        window.scoutWS = scoutWS;
+        window.pilotWS = pilotWS;
         
         // Add initial connection message to logger
         if (window.messageLogger) {
             window.messageLogger.addMessage({
                 type: 'system',
-                text: 'Attempting to connect to Scout WebSocket...',
+                text: 'Attempting to connect to Pilot WebSocket...',
                 timestamp: Date.now() / 1000,
                 source: 'SYSTEM'
             });
@@ -393,9 +393,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
-    if (scoutWS) {
-        scoutWS.disconnect();
+    if (pilotWS) {
+        pilotWS.disconnect();
     }
 });
 
-} // End of scoutWebSocketLoaded check
+} // End of pilotWebSocketLoaded check

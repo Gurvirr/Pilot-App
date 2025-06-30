@@ -1,4 +1,4 @@
-# Scout AI Assistant
+# Pilot AI Assistant
 
 A powerful, voice-controlled AI assistant built with a Python backend and an Electron frontend. This project uses Google Gemini for AI logic and ElevenLabs for realistic Text-to-Speech.
 
@@ -76,7 +76,7 @@ The Python server handles the AI logic and speech processing.
 cd backend/python
 python server.py
 ```
-You should see output indicating that the "Scout Flask Server" is running on port 5000.
+You should see output indicating that the "Pilot Flask Server" is running on port 5000.
 
 ### Terminal 2: Start the Electron Frontend
 
@@ -85,14 +85,14 @@ This command starts the desktop application, which will display the UI.
 # From the project's root directory
 npm start
 ```
-The Scout overlay should now appear on your screen.
+The Pilot overlay should now appear on your screen.
 
 ## Core Features
 - **Voice-Controlled AI**: Uses Google Gemini to understand commands and perform actions.
 - **Realistic Text-to-Speech**: Powered by the ElevenLabs API for natural-sounding voice responses.
 - **Desktop Overlay UI**: A persistent, transparent Electron overlay to display system info, media, and AI status.
 - **System and Media Integration**: Real-time monitoring of CPU/RAM and currently playing media.
-- **Extensible Action System**: Easily add new capabilities for Scout to perform, from opening apps to controlling in-game macros.
+- **Extensible Action System**: Easily add new capabilities for Pilot to perform, from opening apps to controlling in-game macros.
 
 ```bash
 cd backend

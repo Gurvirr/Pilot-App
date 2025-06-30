@@ -465,7 +465,7 @@ if __name__ == "__main__":
     time.sleep(2)
     
     # Test typing in chat
-    type_chat("Hello from Scout!")
+    type_chat("Hello from Pilot!")
     time.sleep(2)
     
     # Test spamming chat
