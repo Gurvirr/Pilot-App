@@ -33,11 +33,11 @@ Pilot-App/
 **a. Clone the repository:**
 ```bash
 git clone <repository-url>
-cd spurhacks-2025
+cd Pilot-App
 ```
 
 **b. Set up Environment Variables:**
-Create a file named `.env` in the root of the project (`spurhacks-2025/`) and add your API keys:
+Create a file named `.env` in the root of the project (`Pilot-App/`) and add your API keys:
 ```env
 ELEVENLABS_API_KEY="your_elevenlabs_api_key"
 GEMINI_API_KEY="your_gemini_api_key"
