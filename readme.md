@@ -7,7 +7,7 @@ A powerful, voice-controlled AI assistant built with a Python backend and an Ele
 This project is organized into a monorepo with two main backend services and a frontend UI.
 
 ```
-spurhacks-2025/
+Pilot-App/
 ├── backend/
 │   ├── python/      # Python AI, Flask Server, and Actions
 │   │   ├── AI/
